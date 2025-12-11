@@ -49,3 +49,26 @@ secrets.md
 
 # Keep public docs
 !.same/README.md
+
+# SECRET PAGES - Future-proof patterns
+# Any route under these paths will be ignored
+src/app/secret/
+src/app/secrets/
+src/app/hidden/
+src/app/mystery/
+src/app/puzzle/
+src/app/clue/
+
+# Secret page markers - use these naming patterns
+**/page.secret.tsx
+**/page.hidden.tsx
+*.secret.ts
+*.secret.tsx
+*.hidden.ts
+*.hidden.tsx
+
+# Secret configuration files
+pages-config.private.ts
+pages-config.private.json
+secret-pages.json
+hidden-pages.json
