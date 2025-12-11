@@ -63,7 +63,7 @@ export default function HomePage() {
           <nav className="flex items-center gap-4">
             {user ? (
               <>
-                <Link href="/discoveries">
+                <Link href="/index">
                   <Button variant="ghost" className="font-mono">
                     index
                   </Button>
@@ -147,7 +147,7 @@ export default function HomePage() {
                   welcome back. your discoveries are being tracked.
                 </p>
                 <div className="flex gap-3">
-                  <Link href="/discoveries">
+                  <Link href="/index">
                     <Button className="font-mono">
                       view your index
                     </Button>

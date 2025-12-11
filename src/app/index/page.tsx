@@ -154,9 +154,9 @@ export default function IndexPage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/discoveries">
+            <Link href="/index">
               <Button variant="ghost" className="font-mono">
-                discoveries
+                index
               </Button>
             </Link>
             <Link href="/leaderboard">
