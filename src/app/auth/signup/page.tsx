@@ -137,7 +137,9 @@ export default function SignUpPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="font-mono">email</Label>
+              <Label htmlFor="email" className="font-mono">
+                email <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -146,24 +148,32 @@ export default function SignUpPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="font-mono"
+                autoComplete="email"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="font-mono">password</Label>
+              <Label htmlFor="password" className="font-mono">
+                password <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="8-24 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="font-mono"
+                minLength={8}
+                maxLength={24}
+                autoComplete="new-password"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="font-mono">confirm password</Label>
+              <Label htmlFor="confirmPassword" className="font-mono">
+                confirm password <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -172,6 +182,9 @@ export default function SignUpPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="font-mono"
+                minLength={8}
+                maxLength={24}
+                autoComplete="new-password"
               />
             </div>
 
