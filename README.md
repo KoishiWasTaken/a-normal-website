@@ -70,26 +70,30 @@ The application is designed to be extensible. Documentation for adding new featu
 
 ```
 a-normal-website/
-├── src/
-│   ├── app/
-│   │   ├── auth/          # Authentication pages
-│   │   ├── index/         # User's discovery index
-│   │   ├── leaderboard/   # Global leaderboard
-│   │   ├── profile/       # User profile
-│   │   └── page.tsx       # Homepage
-│   ├── components/ui/     # shadcn components
-│   └── lib/
-│       ├── supabase/      # Supabase client configs
-│       └── types/         # TypeScript types
-├── .same/
-│   ├── setup-guide.md     # Detailed setup instructions
-│   └── supabase-schema.sql # Database schema
-└── netlify.toml           # Netlify deployment config
+ src/
+   ├── app/
+   │   ├── auth/          # Authentication pages
+   │   ├── index/         # User's discovery index
+   │   ├── leaderboard/   # Global leaderboard
+   │   ├── profile/       # User profile
+   │   └── page.tsx       # Homepage
+   ├── components/ui/     # shadcn components
+   └── lib/
+       ├── supabase/      # Supabase client configs
+       └── types/         # TypeScript types
+ .same/
+   ├── setup-guide.md     # Detailed setup instructions
+   └── supabase-schema.sql # Database schema
+ netlify.toml           # Netlify deployment config
 ```
 
 ## Deployment
 
-### Deploy to Netlify
+This project is deployed to Netlify with auto-deployment from GitHub enabled. Any push to the `master` branch will automatically trigger a new deployment.
+
+**Live Site:** https://anormalwebsite.xyz
+
+### Deploy Your Own Instance
 
 1. Push your code to GitHub
 2. Connect your repository to Netlify
