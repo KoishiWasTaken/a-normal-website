@@ -1,107 +1,59 @@
 # a normal website
 
-A web-based exploration and discovery platform with gamification elements.
+just a normal website. nothing unusual here.
 
-## Features
+## about
 
-- **User Accounts**: Username and email-based authentication with verification
-- **Discovery System**: Track and collect findings as you explore
-- **Leaderboard**: Compete with other explorers
-- **Personal Profile**: View your statistics and achievements
-- **Settings**: Manage your account preferences
-- **Anonymous Browsing**: Explore without creating an account
+this is a website. you can browse it if you want. there's really nothing special to find.
 
-## Quick Start
+if you want to keep track of your... browsing history, you can create an account. totally optional though.
 
-### 1. Install Dependencies
+## features
+
+- create an account (or don't)
+- browse around
+- that's it, really
+
+## technical information
+
+built with modern web technologies for a completely normal browsing experience.
+
+**stack:**
+- next.js
+- react
+- tailwind css
+- postgresql
+
+## setup
+
+if you want to run this locally for some reason:
 
 ```bash
+# install
 bun install
-```
 
-### 2. Set Up Supabase
-
-1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Run the SQL schema from `.same/supabase-schema.sql` in your Supabase SQL Editor
-3. Get your project URL and anon key from Project Settings > API
-4. Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
-
-```bash
+# configure
 cp .env.example .env.local
-```
+# (add your database credentials)
 
-### 3. Configure Environment Variables
-
-Edit `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-### 4. Run Development Server
-
-```bash
+# run
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the site.
+visit `http://localhost:3000` to see... well, a normal website.
 
-## Documentation
+## deployment
 
-- **Setup Guide**: See `.same/setup-guide.md` for detailed setup instructions
-- **Database Schema**: See `.same/supabase-schema.sql` for the complete database structure
+deployed via netlify. pushes to master trigger automatic deployments.
 
-## Tech Stack
+## contributing
 
-- **Framework**: Next.js 15 with React 18
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth with email verification
-- **Deployment**: Netlify (configured)
-- **Package Manager**: Bun
+this is a personal project. if you found this repository, you're probably looking for something that isn't here.
 
-## Extending the Application
+## license
 
-The application is designed to be extensible. Documentation for adding new features and content is available to project maintainers.
+all rights reserved. probably.
 
-## Project Structure
+---
 
-```
-a-normal-website/
- src/
-   ├── app/
-   │   ├── auth/          # Authentication pages
-   │   ├── index/         # User's discovery index
-   │   ├── leaderboard/   # Global leaderboard
-   │   ├── profile/       # User profile
-   │   └── page.tsx       # Homepage
-   ├── components/ui/     # shadcn components
-   └── lib/
-       ├── supabase/      # Supabase client configs
-       └── types/         # TypeScript types
- .same/
-   ├── setup-guide.md     # Detailed setup instructions
-   └── supabase-schema.sql # Database schema
- netlify.toml           # Netlify deployment config
-```
-
-## Deployment
-
-This project is deployed to Netlify with auto-deployment from GitHub enabled. Any push to the `master` branch will automatically trigger a new deployment.
-
-**Live Site:** https://anormalwebsite.xyz
-
-### Deploy Your Own Instance
-
-1. Push your code to GitHub
-2. Connect your repository to Netlify
-3. Add environment variables in Netlify dashboard
-4. Deploy!
-
-See `.same/setup-guide.md` for detailed deployment instructions.
-
-## License
-
-This is a draft/starter project. Customize as needed for your ARG experience!
+© 2025 a normal website. nothing to see here.

@@ -6,16 +6,33 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { User, Trophy, Clock, Target } from 'lucide-react'
+
+interface UserProfile {
+  username: string | null
+  display_name: string | null
+  email: string | null
+  created_at: string
+}
 
 interface UserStats {
   total_pages_discovered: number
   last_discovery_at: string | null
   first_discoveries_count: number
+  discovered_pages: any[]
+}
+
+interface LeaderboardRank {
+  rank: number
+  total_users: number
 }
 
 export default function ProfilePage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
+  const [rank, setRank] = useState<LeaderboardRank | null>(null)
+  const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -31,10 +48,21 @@ export default function ProfilePage() {
 
       setUser(user)
 
+      // Fetch user profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, display_name, email, created_at')
+        .eq('id', user.id)
+        .single()
+
+      if (profileData) {
+        setProfile(profileData)
+      }
+
       // Fetch user statistics
       const { data: statsData } = await supabase
         .from('user_statistics')
-        .select('total_pages_discovered, last_discovery_at, first_discoveries')
+        .select('total_pages_discovered, last_discovery_at, first_discoveries, discovered_pages')
         .eq('user_id', user.id)
         .single()
 
@@ -46,15 +74,39 @@ export default function ProfilePage() {
         setStats({
           total_pages_discovered: statsData.total_pages_discovered,
           last_discovery_at: statsData.last_discovery_at,
-          first_discoveries_count: firstDiscoveries
+          first_discoveries_count: firstDiscoveries,
+          discovered_pages: statsData.discovered_pages || []
         })
+      }
+
+      // Get total number of pages
+      const { count } = await supabase
+        .from('pages')
+        .select('*', { count: 'exact', head: true })
+
+      setTotalPages(count || 0)
+
+      // Calculate rank on leaderboard
+      const { data: leaderboardData } = await supabase
+        .from('leaderboard')
+        .select('user_id, total_pages_discovered')
+        .order('total_pages_discovered', { ascending: false })
+
+      if (leaderboardData) {
+        const userIndex = leaderboardData.findIndex(entry => entry.user_id === user.id)
+        if (userIndex !== -1) {
+          setRank({
+            rank: userIndex + 1,
+            total_users: leaderboardData.length
+          })
+        }
       }
 
       setLoading(false)
     }
 
     fetchData()
-  }, [])
+  }, [router, supabase])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -74,6 +126,33 @@ export default function ProfilePage() {
     })
   }
 
+  const getOrdinalSuffix = (num: number) => {
+    const j = num % 10
+    const k = num % 100
+    if (j === 1 && k !== 11) return 'st'
+    if (j === 2 && k !== 12) return 'nd'
+    if (j === 3 && k !== 13) return 'rd'
+    return 'th'
+  }
+
+  const getCompletionPercentage = () => {
+    if (!stats || totalPages === 0) return 0
+    return Math.round((stats.total_pages_discovered / totalPages) * 100)
+  }
+
+  const getMemberDuration = () => {
+    if (!profile?.created_at) return 'unknown'
+    const created = new Date(profile.created_at)
+    const now = new Date()
+    const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (days === 0) return 'joined today'
+    if (days === 1) return '1 day'
+    if (days < 30) return `${days} days`
+    if (days < 365) return `${Math.floor(days / 30)} months`
+    return `${Math.floor(days / 365)} years`
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -86,7 +165,7 @@ export default function ProfilePage() {
           <nav className="flex items-center gap-4">
             <Link href="/discoveries">
               <Button variant="ghost" className="font-mono">
-                index
+                discoveries
               </Button>
             </Link>
             <Link href="/leaderboard">
@@ -99,94 +178,248 @@ export default function ProfilePage() {
                 profile
               </Button>
             </Link>
+            <Link href="/settings">
+              <Button variant="ghost" className="font-mono">
+                settings
+              </Button>
+            </Link>
           </nav>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto space-y-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-mono font-bold text-foreground">
-              profile
-            </h1>
-            <p className="text-muted-foreground font-mono">
-              your account information
-            </p>
-          </div>
-
+        <div className="max-w-3xl mx-auto space-y-6">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground font-mono">
               loading...
             </div>
           ) : (
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-mono">account details</CardTitle>
-                  <CardDescription className="font-mono">
-                    your basic information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground font-mono">email</div>
-                    <div className="text-foreground font-mono">{user?.email}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-sm text-muted-foreground font-mono">user id</div>
-                    <div className="text-xs text-foreground font-mono break-all">{user?.id}</div>
+            <>
+              {/* Profile Header */}
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                        <User className="w-8 h-8 text-primary" />
+                      </div>
+                      <div>
+                        <h1 className="text-3xl font-mono font-bold text-foreground">
+                          {profile?.username || 'anonymous'}
+                        </h1>
+                        <p className="text-sm text-muted-foreground font-mono mt-1">
+                          {profile?.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono mt-2">
+                          member for {getMemberDuration()}
+                        </p>
+                      </div>
+                    </div>
+                    <Link href="/settings">
+                      <Button variant="outline" size="sm" className="font-mono">
+                        edit profile
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Stats Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <Target className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-2xl font-bold text-primary font-mono">
+                          {stats?.total_pages_discovered || 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono">
+                          pages found
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <Trophy className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-2xl font-bold text-primary font-mono">
+                          {stats?.first_discoveries_count || 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono">
+                          first finds
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <span className="text-lg font-mono text-primary">#</span>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-primary font-mono">
+                          {rank ? `${rank.rank}${getOrdinalSuffix(rank.rank)}` : '-'}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono">
+                          rank
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-2xl font-bold text-primary font-mono">
+                          {getCompletionPercentage()}%
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono">
+                          complete
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Detailed Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-mono">discovery progress</CardTitle>
+                    <CardDescription className="font-mono">
+                      your exploration statistics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm font-mono">
+                        <span className="text-muted-foreground">total pages</span>
+                        <span className="text-foreground">{totalPages}</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary rounded-full h-2 transition-all"
+                          style={{ width: `${getCompletionPercentage()}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground font-mono">discovered</span>
+                        <span className="text-sm text-foreground font-mono">
+                          {stats?.total_pages_discovered || 0} / {totalPages}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground font-mono">remaining</span>
+                        <span className="text-sm text-foreground font-mono">
+                          {totalPages - (stats?.total_pages_discovered || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-mono">recent activity</CardTitle>
+                    <CardDescription className="font-mono">
+                      your latest discoveries
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground font-mono mb-1">
+                        last discovery
+                      </div>
+                      <div className="text-foreground font-mono">
+                        {formatDate(stats?.last_discovery_at || null)}
+                      </div>
+                    </div>
+
+                    {rank && (
+                      <div className="pt-2 border-t border-border">
+                        <div className="text-sm text-muted-foreground font-mono mb-1">
+                          leaderboard position
+                        </div>
+                        <div className="text-foreground font-mono">
+                          {rank.rank}{getOrdinalSuffix(rank.rank)} of {rank.total_users} explorers
+                        </div>
+                      </div>
+                    )}
+
+                    {stats?.first_discoveries_count > 0 && (
+                      <div className="pt-2 border-t border-border">
+                        <div className="text-sm text-primary font-mono">
+                          ★ {stats.first_discoveries_count} first {stats.first_discoveries_count === 1 ? 'discovery' : 'discoveries'}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Account Details */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-mono">discovery statistics</CardTitle>
+                  <CardTitle className="font-mono">account information</CardTitle>
                   <CardDescription className="font-mono">
-                    your exploration progress
+                    technical details
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-muted-foreground font-mono">pages discovered</div>
-                      <div className="text-3xl font-bold text-primary font-mono">
-                        {stats?.total_pages_discovered || 0}
-                      </div>
+                      <div className="text-sm text-muted-foreground font-mono">username</div>
+                      <div className="text-foreground font-mono">{profile?.username || 'not set'}</div>
                     </div>
-
                     <div>
-                      <div className="text-sm text-muted-foreground font-mono">first discoveries</div>
-                      <div className="text-3xl font-bold text-primary font-mono">
-                        {stats?.first_discoveries_count || 0}
-                      </div>
+                      <div className="text-sm text-muted-foreground font-mono">email</div>
+                      <div className="text-foreground font-mono">{profile?.email}</div>
                     </div>
                   </div>
-
                   <div>
-                    <div className="text-sm text-muted-foreground font-mono">last discovery</div>
-                    <div className="text-foreground font-mono">{formatDate(stats?.last_discovery_at || null)}</div>
+                    <div className="text-sm text-muted-foreground font-mono">user id</div>
+                    <div className="text-xs text-foreground font-mono break-all opacity-50">{user?.id}</div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Actions */}
               <Card>
                 <CardHeader>
                   <CardTitle className="font-mono">actions</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="flex gap-3">
+                  <Link href="/settings" className="flex-1">
+                    <Button variant="outline" className="w-full font-mono">
+                      settings
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     onClick={handleSignOut}
-                    className="w-full font-mono"
+                    className="flex-1 font-mono"
                   >
                     sign out
                   </Button>
                 </CardContent>
               </Card>
-            </div>
+            </>
           )}
         </div>
       </main>
