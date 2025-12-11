@@ -50,6 +50,12 @@ export default function ProfilePage() {
 
       setUser(user)
 
+      // Track page discovery
+      await supabase.rpc('record_page_discovery', {
+        p_user_id: user.id,
+        p_page_key: 'profile'
+      })
+
       // Fetch user profile
       const { data: profileData } = await supabase
         .from('profiles')
@@ -165,9 +171,9 @@ export default function ProfilePage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/index">
+            <Link href="/archive">
               <Button variant="ghost" className="font-mono">
-                index
+                archive
               </Button>
             </Link>
             <Link href="/leaderboard">

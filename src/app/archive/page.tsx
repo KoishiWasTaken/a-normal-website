@@ -52,6 +52,12 @@ export default function IndexPage() {
 
       setUser(user)
 
+      // Track page discovery
+      await supabase.rpc('record_page_discovery', {
+        p_user_id: user.id,
+        p_page_key: 'archive'
+      })
+
       // Fetch ALL pages
       const { data: allPagesData } = await supabase
         .from('pages')
@@ -156,9 +162,9 @@ export default function IndexPage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/index">
+            <Link href="/archive">
               <Button variant="ghost" className="font-mono">
-                index
+                archive
               </Button>
             </Link>
             <Link href="/leaderboard">
@@ -185,7 +191,7 @@ export default function IndexPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <h1 className="text-4xl font-mono font-bold text-foreground">
-              index
+              archive
             </h1>
             <p className="text-muted-foreground font-mono">
               {allPages.filter(p => p.discovered).length} of {allPages.length} pages discovered

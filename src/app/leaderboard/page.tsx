@@ -28,6 +28,14 @@ export default function LeaderboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
+      // Track page discovery
+      if (user) {
+        await supabase.rpc('record_page_discovery', {
+          p_user_id: user.id,
+          p_page_key: 'leaderboard'
+        })
+      }
+
       const { data, error } = await supabase
         .from('leaderboard')
         .select('*')
@@ -68,9 +76,9 @@ export default function LeaderboardPage() {
           <nav className="flex items-center gap-4">
             {user ? (
               <>
-                <Link href="/index">
+                <Link href="/archive">
                   <Button variant="ghost" className="font-mono">
-                    index
+                    archive
                   </Button>
                 </Link>
                 <Link href="/leaderboard">

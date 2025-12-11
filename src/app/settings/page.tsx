@@ -40,10 +40,17 @@ export default function SettingsPage() {
         return
       }
       setUser(user)
+
+      // Track page discovery
+      await supabase.rpc('record_page_discovery', {
+        p_user_id: user.id,
+        p_page_key: 'settings'
+      })
+
       setLoading(false)
     }
     getUser()
-  }, [router, supabase.auth])
+  }, [router, supabase])
 
   const handleEmailChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,9 +164,9 @@ export default function SettingsPage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/index">
+            <Link href="/archive">
               <Button variant="ghost" className="font-mono">
-                index
+                archive
               </Button>
             </Link>
             <Link href="/leaderboard">
