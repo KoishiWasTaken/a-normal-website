@@ -66,7 +66,7 @@ export default function LeaderboardPage() {
           <nav className="flex items-center gap-4">
             {user ? (
               <>
-                <Link href="/index">
+                <Link href="/collection">
                   <Button variant="ghost" className="font-mono">
                     index
                   </Button>

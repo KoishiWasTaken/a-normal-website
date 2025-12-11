@@ -155,9 +155,9 @@ export default function SettingsPage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/index">
+            <Link href="/collection">
               <Button variant="ghost" className="font-mono">
-                index
+                collection
               </Button>
             </Link>
             <Link href="/leaderboard">
