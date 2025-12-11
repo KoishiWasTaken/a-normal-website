@@ -130,7 +130,18 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-8">
+            {/* Hidden Button - very subtle */}
+            <div className="flex justify-center">
+              <Link href="/vault">
+                <button
+                  className="w-3 h-3 bg-background hover:bg-primary/20 transition-all duration-300 rounded-sm border border-border/30 hover:border-primary/50"
+                  title="..."
+                  aria-label="Hidden access"
+                />
+              </Link>
+            </div>
+
             <p className="text-sm text-muted-foreground font-mono">
               © 2025 a normal website. all rights reserved. probably.
             </p>
