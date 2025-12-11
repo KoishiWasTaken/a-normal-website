@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { validatePassword } from '@/lib/validation'
+import MobileNav from '@/components/MobileNav'
 
 export default function SettingsPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -150,45 +151,24 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
+      <header className="border-b border-border sticky top-0 bg-background z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-mono text-foreground hover:text-primary transition-colors">
+          <Link href="/" className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
             a normal website
           </Link>
 
-          <nav className="flex items-center gap-4">
-            <Link href="/archive">
-              <Button variant="ghost" className="font-mono">
-                archive
-              </Button>
-            </Link>
-            <Link href="/leaderboard">
-              <Button variant="ghost" className="font-mono">
-                leaderboard
-              </Button>
-            </Link>
-            <Link href="/profile">
-              <Button variant="ghost" className="font-mono">
-                profile
-              </Button>
-            </Link>
-            <Link href="/settings">
-              <Button variant="ghost" className="font-mono">
-                settings
-              </Button>
-            </Link>
-          </nav>
+          <MobileNav user={user} />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto space-y-8">
+      <main className="container mx-auto px-4 py-8 md:py-16">
+        <div className="max-w-2xl mx-auto space-y-6 md:space-y-8">
           <div className="space-y-2">
-            <h1 className="text-4xl font-mono font-bold text-foreground">
+            <h1 className="text-3xl md:text-4xl font-mono font-bold text-foreground">
               settings
             </h1>
-            <p className="text-muted-foreground font-mono">
+            <p className="text-sm md:text-base text-muted-foreground font-mono">
               manage your account
             </p>
           </div>

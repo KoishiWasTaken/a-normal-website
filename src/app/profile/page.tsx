@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { User, Trophy, Clock, Target } from 'lucide-react'
+import MobileNav from '@/components/MobileNav'
 
 interface UserProfile {
   username: string | null
@@ -164,40 +165,19 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
+      <header className="border-b border-border sticky top-0 bg-background z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-mono text-foreground hover:text-primary transition-colors">
+          <Link href="/" className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
             a normal website
           </Link>
 
-          <nav className="flex items-center gap-4">
-            <Link href="/archive">
-              <Button variant="ghost" className="font-mono">
-                archive
-              </Button>
-            </Link>
-            <Link href="/leaderboard">
-              <Button variant="ghost" className="font-mono">
-                leaderboard
-              </Button>
-            </Link>
-            <Link href="/profile">
-              <Button variant="ghost" className="font-mono">
-                profile
-              </Button>
-            </Link>
-            <Link href="/settings">
-              <Button variant="ghost" className="font-mono">
-                settings
-              </Button>
-            </Link>
-          </nav>
+          <MobileNav user={user} />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <main className="container mx-auto px-4 py-8 md:py-16">
+        <div className="max-w-3xl mx-auto space-y-4 md:space-y-6">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground font-mono">
               loading...
@@ -206,17 +186,17 @@ export default function ProfilePage() {
             <>
               {/* Profile Header */}
               <Card className="border-primary/20">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                        <User className="w-8 h-8 text-primary" />
+                <CardContent className="pt-4 md:pt-6">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <User className="w-6 h-6 md:w-8 md:h-8 text-primary" />
                       </div>
-                      <div>
-                        <h1 className="text-3xl font-mono font-bold text-foreground">
+                      <div className="min-w-0 flex-1">
+                        <h1 className="text-2xl md:text-3xl font-mono font-bold text-foreground truncate">
                           {profile?.username || 'anonymous'}
                         </h1>
-                        <p className="text-sm text-muted-foreground font-mono mt-1">
+                        <p className="text-xs md:text-sm text-muted-foreground font-mono mt-1 truncate">
                           {profile?.email}
                         </p>
                         <p className="text-xs text-muted-foreground font-mono mt-2">
@@ -224,8 +204,8 @@ export default function ProfilePage() {
                         </p>
                       </div>
                     </div>
-                    <Link href="/settings">
-                      <Button variant="outline" size="sm" className="font-mono">
+                    <Link href="/settings" className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" className="font-mono w-full sm:w-auto">
                         edit profile
                       </Button>
                     </Link>
@@ -234,13 +214,13 @@ export default function ProfilePage() {
               </Card>
 
               {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <Target className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-2xl font-bold text-primary font-mono">
+                  <CardContent className="pt-4 md:pt-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Target className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xl md:text-2xl font-bold text-primary font-mono">
                           {stats?.total_pages_discovered || 0}
                         </div>
                         <div className="text-xs text-muted-foreground font-mono">
@@ -252,11 +232,11 @@ export default function ProfilePage() {
                 </Card>
 
                 <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <Trophy className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-2xl font-bold text-primary font-mono">
+                  <CardContent className="pt-4 md:pt-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xl md:text-2xl font-bold text-primary font-mono">
                           {stats?.first_discoveries_count || 0}
                         </div>
                         <div className="text-xs text-muted-foreground font-mono">
@@ -268,13 +248,13 @@ export default function ProfilePage() {
                 </Card>
 
                 <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 flex items-center justify-center">
-                        <span className="text-lg font-mono text-primary">#</span>
+                  <CardContent className="pt-4 md:pt-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="w-4 h-4 md:w-5 md:h-5 flex items-center justify-center flex-shrink-0">
+                        <span className="text-base md:text-lg font-mono text-primary">#</span>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-primary font-mono">
+                      <div className="min-w-0">
+                        <div className="text-xl md:text-2xl font-bold text-primary font-mono">
                           {rank ? `${rank.rank}${getOrdinalSuffix(rank.rank)}` : '-'}
                         </div>
                         <div className="text-xs text-muted-foreground font-mono">
@@ -286,11 +266,11 @@ export default function ProfilePage() {
                 </Card>
 
                 <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-2xl font-bold text-primary font-mono">
+                  <CardContent className="pt-4 md:pt-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Clock className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xl md:text-2xl font-bold text-primary font-mono">
                           {getCompletionPercentage()}%
                         </div>
                         <div className="text-xs text-muted-foreground font-mono">

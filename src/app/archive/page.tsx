@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChevronRight, Lock, ExternalLink } from 'lucide-react'
+import MobileNav from '@/components/MobileNav'
 
 interface PageInfo {
   id: string
@@ -155,45 +156,24 @@ export default function IndexPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
+      <header className="border-b border-border sticky top-0 bg-background z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-mono text-foreground hover:text-primary transition-colors">
+          <Link href="/" className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
             a normal website
           </Link>
 
-          <nav className="flex items-center gap-4">
-            <Link href="/archive">
-              <Button variant="ghost" className="font-mono">
-                archive
-              </Button>
-            </Link>
-            <Link href="/leaderboard">
-              <Button variant="ghost" className="font-mono">
-                leaderboard
-              </Button>
-            </Link>
-            <Link href="/profile">
-              <Button variant="ghost" className="font-mono">
-                profile
-              </Button>
-            </Link>
-            <Link href="/settings">
-              <Button variant="ghost" className="font-mono">
-                settings
-              </Button>
-            </Link>
-          </nav>
+          <MobileNav user={user} />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 md:py-8">
         <div className="space-y-4">
           <div className="space-y-2">
-            <h1 className="text-4xl font-mono font-bold text-foreground">
+            <h1 className="text-3xl md:text-4xl font-mono font-bold text-foreground">
               archive
             </h1>
-            <p className="text-muted-foreground font-mono">
+            <p className="text-sm md:text-base text-muted-foreground font-mono">
               {allPages.filter(p => p.discovered).length} of {allPages.length} pages discovered
             </p>
           </div>
@@ -203,33 +183,33 @@ export default function IndexPage() {
               loading your discoveries...
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
               {/* Sidebar */}
               <div className="lg:col-span-1">
-                <Card className="sticky top-4">
+                <Card className="lg:sticky lg:top-20">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-mono">entries</CardTitle>
+                    <CardTitle className="text-base md:text-lg font-mono">entries</CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="space-y-1">
+                    <div className="space-y-1 max-h-[400px] lg:max-h-[calc(100vh-200px)] overflow-y-auto">
                       {allPages.map((page, index) => (
                         <button
                           key={page.id}
                           onClick={() => setSelectedPage(page)}
-                          className={`w-full text-left px-4 py-2 font-mono text-sm transition-colors flex items-center justify-between ${
+                          className={`w-full text-left px-3 md:px-4 py-2 font-mono text-xs md:text-sm transition-colors flex items-center justify-between ${
                             selectedPage?.id === page.id
                               ? 'bg-primary/10 text-primary border-l-2 border-primary'
                               : 'hover:bg-muted text-foreground'
                           }`}
                         >
-                          <span className="flex items-center gap-2">
-                            {!page.discovered && <Lock size={14} />}
-                            <span>
+                          <span className="flex items-center gap-2 truncate">
+                            {!page.discovered && <Lock size={12} className="md:w-[14px] md:h-[14px] flex-shrink-0" />}
+                            <span className="truncate">
                               {page.discovered ? page.page_name : '???'}
                             </span>
                           </span>
                           {selectedPage?.id === page.id && (
-                            <ChevronRight size={16} />
+                            <ChevronRight size={14} className="md:w-4 md:h-4 flex-shrink-0" />
                           )}
                         </button>
                       ))}
@@ -245,18 +225,18 @@ export default function IndexPage() {
                     /* Discovered Page */
                     <Card>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
+                        <div className="space-y-3">
                           <div className="space-y-1">
-                            <CardTitle className="text-2xl font-mono">
+                            <CardTitle className="text-xl md:text-2xl font-mono">
                               {selectedPage.page_name}
                             </CardTitle>
-                            <CardDescription className="font-mono text-xs">
+                            <CardDescription className="font-mono text-xs break-all">
                               {selectedPage.page_url}
                             </CardDescription>
                           </div>
                           {selectedPage.can_navigate && (
-                            <Link href={selectedPage.page_url}>
-                              <Button size="sm" className="font-mono gap-2">
+                            <Link href={selectedPage.page_url} className="block sm:inline-block">
+                              <Button size="sm" className="font-mono gap-2 w-full sm:w-auto">
                                 <ExternalLink size={16} />
                                 visit
                               </Button>
@@ -268,10 +248,10 @@ export default function IndexPage() {
                         {/* Description */}
                         {selectedPage.page_description && (
                           <div className="space-y-2">
-                            <h3 className="text-sm font-mono text-muted-foreground uppercase">
+                            <h3 className="text-xs md:text-sm font-mono text-muted-foreground uppercase">
                               description
                             </h3>
-                            <p className="text-foreground font-mono leading-relaxed">
+                            <p className="text-sm md:text-base text-foreground font-mono leading-relaxed">
                               {selectedPage.page_description}
                             </p>
                           </div>
@@ -280,10 +260,10 @@ export default function IndexPage() {
                         {/* How to Access */}
                         {selectedPage.how_to_access && (
                           <div className="space-y-2">
-                            <h3 className="text-sm font-mono text-muted-foreground uppercase">
+                            <h3 className="text-xs md:text-sm font-mono text-muted-foreground uppercase">
                               how to access
                             </h3>
-                            <p className="text-foreground font-mono leading-relaxed">
+                            <p className="text-sm md:text-base text-foreground font-mono leading-relaxed">
                               {selectedPage.how_to_access}
                             </p>
                           </div>

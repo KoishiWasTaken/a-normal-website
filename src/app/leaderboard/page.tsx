@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import MobileNav from '@/components/MobileNav'
 
 interface LeaderboardEntry {
   user_id: string
@@ -67,57 +68,24 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
+      <header className="border-b border-border sticky top-0 bg-background z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-mono text-foreground hover:text-primary transition-colors">
+          <Link href="/" className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
             a normal website
           </Link>
 
-          <nav className="flex items-center gap-4">
-            {user ? (
-              <>
-                <Link href="/archive">
-                  <Button variant="ghost" className="font-mono">
-                    archive
-                  </Button>
-                </Link>
-                <Link href="/leaderboard">
-                  <Button variant="ghost" className="font-mono">
-                    leaderboard
-                  </Button>
-                </Link>
-                <Link href="/profile">
-                  <Button variant="ghost" className="font-mono">
-                    profile
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/signin">
-                  <Button variant="ghost" className="font-mono">
-                    sign in
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button variant="default" className="font-mono">
-                    sign up
-                  </Button>
-                </Link>
-              </>
-            )}
-          </nav>
+          <MobileNav user={user} />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <main className="container mx-auto px-4 py-8 md:py-16">
+        <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
           <div className="space-y-2">
-            <h1 className="text-4xl font-mono font-bold text-foreground">
+            <h1 className="text-3xl md:text-4xl font-mono font-bold text-foreground">
               leaderboard
             </h1>
-            <p className="text-muted-foreground font-mono">
+            <p className="text-sm md:text-base text-muted-foreground font-mono">
               top explorers of this normal website
             </p>
           </div>
@@ -147,14 +115,14 @@ export default function LeaderboardPage() {
                     return (
                       <div
                         key={entry.user_id}
-                        className={`flex items-center justify-between p-4 rounded-lg border ${
+                        className={`flex items-center justify-between p-3 md:p-4 rounded-lg border ${
                           isCurrentUser
                             ? 'bg-primary/10 border-primary/30'
                             : 'bg-card border-border'
                         }`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 flex items-center justify-center rounded font-mono font-bold ${
+                        <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                          <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded font-mono font-bold text-sm md:text-base flex-shrink-0 ${
                             rank <= 3
                               ? 'bg-primary/20 text-primary'
                               : 'bg-muted text-muted-foreground'
@@ -162,14 +130,14 @@ export default function LeaderboardPage() {
                             {getMedalEmoji(rank)}
                           </div>
 
-                          <div>
-                            <div className="font-mono font-medium text-foreground">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-mono font-medium text-sm md:text-base text-foreground truncate">
                               {entry.display_name || entry.username || 'anonymous explorer'}
                               {isCurrentUser && (
                                 <span className="ml-2 text-xs text-primary">(you)</span>
                               )}
                             </div>
-                            <div className="text-sm text-muted-foreground font-mono">
+                            <div className="text-xs md:text-sm text-muted-foreground font-mono">
                               {entry.first_discoveries_count > 0 && (
                                 <span className="text-primary">
                                   {entry.first_discoveries_count} first {entry.first_discoveries_count === 1 ? 'discovery' : 'discoveries'}
@@ -179,8 +147,8 @@ export default function LeaderboardPage() {
                           </div>
                         </div>
 
-                        <div className="text-right">
-                          <div className="text-2xl font-mono font-bold text-primary">
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <div className="text-xl md:text-2xl font-mono font-bold text-primary">
                             {entry.total_pages_discovered}
                           </div>
                           <div className="text-xs text-muted-foreground font-mono">
