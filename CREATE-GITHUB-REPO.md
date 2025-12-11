@@ -13,7 +13,7 @@ cd a-normal-website
 git status --ignored
 
 # Should show NO results (your email not in tracked files)
-git grep "koishiwastaken@gmail.com"
+git grep "your-email@gmail.com"
 
 # Should show "private/" is ignored
 git status --ignored | grep private

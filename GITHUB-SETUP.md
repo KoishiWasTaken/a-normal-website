@@ -190,7 +190,7 @@ git log --all --full-history -- .same/
 
 ```bash
 # Search for your email in committed files
-git grep "koishiwastaken@gmail.com"
+git grep "your-email@gmail.com"
 
 # Should only appear in ignored files!
 ```
