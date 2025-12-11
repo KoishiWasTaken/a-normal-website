@@ -165,9 +165,9 @@ export default function ProfilePage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/collection">
+            <Link href="/index">
               <Button variant="ghost" className="font-mono">
-                collection
+                index
               </Button>
             </Link>
             <Link href="/leaderboard">

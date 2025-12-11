@@ -156,9 +156,9 @@ export default function IndexPage() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link href="/collection">
+            <Link href="/index">
               <Button variant="ghost" className="font-mono">
-                collection
+                index
               </Button>
             </Link>
             <Link href="/leaderboard">
@@ -185,7 +185,7 @@ export default function IndexPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <h1 className="text-4xl font-mono font-bold text-foreground">
-              collection
+              index
             </h1>
             <p className="text-muted-foreground font-mono">
               {allPages.filter(p => p.discovered).length} of {allPages.length} pages discovered
