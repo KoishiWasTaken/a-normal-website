@@ -183,7 +183,7 @@ export default function IndexPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <h1 className="text-4xl font-mono font-bold text-foreground">
-              discoveries
+              index
             </h1>
             <p className="text-muted-foreground font-mono">
               {allPages.filter(p => p.discovered).length} of {allPages.length} pages discovered
@@ -298,7 +298,7 @@ export default function IndexPage() {
                                 </div>
                               </div>
 
-                              {selectedPage.discovery.discovery_number !== null && (
+                              {selectedPage.discovery.discovery_number !== null ? (
                                 <>
                                   <div>
                                     <div className="text-xs text-muted-foreground font-mono">
@@ -322,6 +322,15 @@ export default function IndexPage() {
                                     </div>
                                   </div>
                                 </>
+                              ) : (
+                                <div className="col-span-2">
+                                  <div className="text-xs text-muted-foreground font-mono mb-1">
+                                    total discoverers
+                                  </div>
+                                  <div className="text-sm text-foreground font-mono">
+                                    {selectedPage.discovery.total_discoverers || 0}
+                                  </div>
+                                </div>
                               )}
                             </div>
 
