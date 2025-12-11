@@ -24,6 +24,12 @@ export default function SignUpPage() {
     e.preventDefault()
     setMessage(null)
 
+    // Check username is provided
+    if (!username || username.trim() === '') {
+      setMessage({ type: 'error', text: 'username is required' })
+      return
+    }
+
     // Validate username
     const usernameValidation = validateUsername(username)
     if (!usernameValidation.valid) {
@@ -110,17 +116,20 @@ export default function SignUpPage() {
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="font-mono">username</Label>
+              <Label htmlFor="username" className="font-mono">
+                username <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="3-16 characters"
+                placeholder="required - 3-16 characters"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 className="font-mono"
                 minLength={3}
                 maxLength={16}
+                autoComplete="username"
               />
               <p className="text-xs text-muted-foreground font-mono">
                 letters, numbers, dashes, underscores only
