@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Chess, Square } from 'chess.js'
-import { Chessboard } from 'react-chessboard'
+import { Chess } from 'chess.js'
+import CustomChessboard from '@/components/CustomChessboard'
 
 // Generate static stars on mount
 const generateStars = () => {
@@ -248,19 +248,6 @@ export default function DeepBluePage() {
     }
   }
 
-  // Additional event handlers for debugging
-  const onPieceDragBegin = (piece: string, sourceSquare: string) => {
-    console.log('🔵 DRAG BEGIN:', { piece, sourceSquare })
-  }
-
-  const onPieceDragEnd = (piece: string, sourceSquare: string) => {
-    console.log('🔴 DRAG END:', { piece, sourceSquare })
-  }
-
-  const onSquareClick = (square: string) => {
-    console.log('🟡 SQUARE CLICKED:', square)
-  }
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -386,27 +373,11 @@ export default function DeepBluePage() {
             </p>
           </div>
 
-          <div className="aspect-square shadow-2xl shadow-blue-500/20 rounded-lg overflow-hidden border-4 border-blue-500/30">
-            <Chessboard
-              id="chess-board"
-              position={position}
-              onPieceDrop={onDrop}
-              onPieceDragBegin={onPieceDragBegin}
-              onPieceDragEnd={onPieceDragEnd}
-              onSquareClick={onSquareClick}
-              boardOrientation="white"
-              arePiecesDraggable={!gameOver && game.turn() === 'w'}
-              isDraggablePiece={({ piece }) => {
-                console.log('🔍 isDraggablePiece check:', { piece, gameOver, turn: game.turn() })
-                return !gameOver && game.turn() === 'w' && piece[0] === 'w'
-              }}
-              customBoardStyle={{
-                borderRadius: '0.5rem'
-              }}
-              customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
-              customLightSquareStyle={{ backgroundColor: '#475569' }}
-            />
-          </div>
+          <CustomChessboard
+            position={position}
+            onPieceDrop={onDrop}
+            isDraggable={!gameOver && game.turn() === 'w'}
+          />
         </div>
 
         {/* Status */}
