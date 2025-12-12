@@ -43,24 +43,29 @@ export default function FriendzPage() {
     const newCode = generateCode()
 
     // Save to database
-    const { error } = await supabase
-      .from('friend_codes')
-      .upsert({
-        user_id: user.id,
-        code: newCode,
-        is_used: false,
-        created_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      })
+    try {
+      const { error } = await supabase
+        .from('friend_codes')
+        .upsert({
+          user_id: user.id,
+          code: newCode,
+          is_used: false,
+          created_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
 
-    if (error) {
-      console.error('Error saving friend code:', error)
+      if (error) {
+        console.error('Error saving friend code:', error)
+        setError('Failed to generate code. Please try again.')
+      } else {
+        setFriendCode(newCode)
+        setSuccess('New friend code generated!')
+        setTimeout(() => setSuccess(null), 3000)
+      }
+    } catch (error) {
+      console.error('Error generating friend code:', error)
       setError('Failed to generate code. Please try again.')
-    } else {
-      setFriendCode(newCode)
-      setSuccess('New friend code generated!')
-      setTimeout(() => setSuccess(null), 3000)
     }
   }
 
@@ -76,55 +81,60 @@ export default function FriendzPage() {
     setError(null)
     setSuccess(null)
 
-    // Check if the code exists and is not used
-    const { data: codeData, error: codeError } = await supabase
-      .from('friend_codes')
-      .select('user_id, is_used')
-      .eq('code', inputCode.trim())
-      .single()
-
-    if (codeError || !codeData) {
-      setError('Invalid friend code.')
-      return
-    }
-
-    if (codeData.is_used) {
-      setError('This friend code has already been used.')
-      return
-    }
-
-    if (codeData.user_id === user.id) {
-      setError('You cannot use your own friend code.')
-      return
-    }
-
-    // Mark the code as used
-    const { error: updateError } = await supabase
-      .from('friend_codes')
-      .update({ is_used: true })
-      .eq('code', inputCode.trim())
-
-    if (updateError) {
-      console.error('Error updating friend code:', updateError)
-      setError('Failed to use code. Please try again.')
-      return
-    }
-
-    // Mark user as authenticated (table may not exist yet)
     try {
-      await supabase
-        .from('friend_authentications')
-        .insert({
-          user_id: user.id,
-          authenticated_at: new Date().toISOString()
-        })
-    } catch (authError) {
-      // Silently fail if table doesn't exist
-      console.log('Friend authentication tracking unavailable')
-    }
+      // Check if the code exists and is not used
+      const { data: codeData, error: codeError } = await supabase
+        .from('friend_codes')
+        .select('user_id, is_used')
+        .eq('code', inputCode.trim())
+        .single()
 
-    setIsAuthenticated(true)
-    setSuccess('You are now worthy!')
+      if (codeError || !codeData) {
+        setError('Invalid friend code.')
+        return
+      }
+
+      if (codeData.is_used) {
+        setError('This friend code has already been used.')
+        return
+      }
+
+      if (codeData.user_id === user.id) {
+        setError('You cannot use your own friend code.')
+        return
+      }
+
+      // Mark the code as used
+      const { error: updateError } = await supabase
+        .from('friend_codes')
+        .update({ is_used: true })
+        .eq('code', inputCode.trim())
+
+      if (updateError) {
+        console.error('Error updating friend code:', updateError)
+        setError('Failed to use code. Please try again.')
+        return
+      }
+
+      // Mark user as authenticated (table may not exist yet)
+      try {
+        await supabase
+          .from('friend_authentications')
+          .insert({
+            user_id: user.id,
+            authenticated_at: new Date().toISOString()
+          })
+      } catch (authError) {
+        // Silently fail if table doesn't exist
+        console.log('Friend authentication tracking unavailable')
+      }
+
+      setIsAuthenticated(true)
+      setSuccess('You are now worthy!')
+    } catch (error) {
+      console.error('Error submitting friend code:', error)
+      setError('Failed to process code. Please try again.')
+    }
   }
 
   useEffect(() => {
@@ -147,41 +157,51 @@ export default function FriendzPage() {
         setTracked(true)
       }
 
-      // Check if user is already authenticated
-      const { data: authData } = await supabase
-        .from('friend_authentications')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      // Check if user is already authenticated (table may not exist)
+      try {
+        const { data: authData } = await supabase
+          .from('friend_authentications')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
 
-      if (authData) {
-        setIsAuthenticated(true)
+        if (authData) {
+          setIsAuthenticated(true)
+        }
+      } catch (error) {
+        // Silently fail if table doesn't exist
+        console.log('Friend authentication check unavailable')
       }
 
       // Load user's friend code if exists
-      const { data: codeData } = await supabase
-        .from('friend_codes')
-        .select('code')
-        .eq('user_id', user.id)
-        .single()
-
-      if (codeData) {
-        setFriendCode(codeData.code)
-      } else {
-        // Generate initial code
-        const newCode = generateCode()
-        const { error } = await supabase
+      try {
+        const { data: codeData } = await supabase
           .from('friend_codes')
-          .insert({
-            user_id: user.id,
-            code: newCode,
-            is_used: false,
-            created_at: new Date().toISOString()
-          })
+          .select('code')
+          .eq('user_id', user.id)
+          .single()
 
-        if (!error) {
-          setFriendCode(newCode)
+        if (codeData) {
+          setFriendCode(codeData.code)
+        } else {
+          // Generate initial code
+          const newCode = generateCode()
+          const { error } = await supabase
+            .from('friend_codes')
+            .insert({
+              user_id: user.id,
+              code: newCode,
+              is_used: false,
+              created_at: new Date().toISOString()
+            })
+
+          if (!error) {
+            setFriendCode(newCode)
+          }
         }
+      } catch (error) {
+        console.error('Error loading friend code:', error)
+        // Silently fail - user can generate a new code manually
       }
 
       setLoading(false)

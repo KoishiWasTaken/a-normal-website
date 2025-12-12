@@ -36,6 +36,7 @@ export default function DeepBluePage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [game, setGame] = useState(new Chess())
+  const [position, setPosition] = useState(new Chess().fen())
   const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
   const [gameOver, setGameOver] = useState(false)
   const [gameResult, setGameResult] = useState<'win' | 'lose' | null>(null)
@@ -178,6 +179,7 @@ export default function DeepBluePage() {
     const gameCopy = new Chess(game.fen())
     gameCopy.move(selectedMove)
     setGame(gameCopy)
+    setPosition(gameCopy.fen())
     checkGameStatus(gameCopy)
   }, [game, gameOver, checkGameStatus])
 
@@ -186,28 +188,39 @@ export default function DeepBluePage() {
 
   // Handle piece drop
   const onDrop = (sourceSquare: string, targetSquare: string) => {
-    if (gameOver || game.turn() !== 'w') return false
+    // Don't allow moves if game is over or not player's turn
+    if (gameOver || game.turn() !== 'w') {
+      return false
+    }
 
+    // Try to make the move
+    const gameCopy = new Chess(game.fen())
     try {
-      const gameCopy = new Chess(game.fen())
       const move = gameCopy.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q' // always promote to queen for simplicity
+        promotion: 'q' // Always promote to queen
       })
 
-      if (move === null) return false // Illegal move
+      // If move is illegal, chess.js returns null
+      if (move === null) {
+        return false
+      }
 
+      // Move is legal - update state
       setGame(gameCopy)
+      setPosition(gameCopy.fen())
 
+      // Check if game ended
       if (checkGameStatus(gameCopy)) {
         return true
       }
 
-      // AI's turn
-      setTimeout(() => makeAiMove(), 500)
+      // Queue AI move after a short delay
+      setTimeout(() => makeAiMove(), 300)
       return true
     } catch (error) {
+      console.error('Move error:', error)
       return false
     }
   }
@@ -339,7 +352,8 @@ export default function DeepBluePage() {
 
           <div className="aspect-square shadow-2xl shadow-blue-500/20 rounded-lg overflow-hidden border-4 border-blue-500/30">
             <Chessboard
-              position={game.fen()}
+              key={position}
+              position={position}
               onPieceDrop={onDrop}
               boardOrientation="white"
               arePiecesDraggable={!gameOver && game.turn() === 'w'}
