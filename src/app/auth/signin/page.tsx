@@ -57,6 +57,14 @@ export default function SignInPage() {
       console.error('❌ Sign in error:', signInError)
       setError(signInError.message)
     } else if (data.user) {
+      // Check if email is verified
+      if (!data.user.email_confirmed_at) {
+        console.log('❌ Email not verified')
+        await supabase.auth.signOut()
+        setError('Please verify your email before signing in. Check your inbox for the verification link.')
+        return
+      }
+
       console.log('✅ Sign in successful! User:', data.user.email)
       console.log('Session:', data.session)
       router.push('/')

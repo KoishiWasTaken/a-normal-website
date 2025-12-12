@@ -113,13 +113,14 @@ export default function LeaderboardPage() {
                     const isCurrentUser = user?.id === entry.user_id
 
                     return (
-                      <div
+                      <Link
                         key={entry.user_id}
+                        href={entry.username ? `/profile/${entry.username}` : '#'}
                         className={`flex items-center justify-between p-3 md:p-4 rounded-lg border ${
                           isCurrentUser
                             ? 'bg-primary/10 border-primary/30'
-                            : 'bg-card border-border'
-                        }`}
+                            : 'bg-card border-border hover:bg-muted'
+                        } ${entry.username ? 'cursor-pointer' : 'cursor-default'} transition-colors`}
                       >
                         <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
                           <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded font-mono font-bold text-sm md:text-base flex-shrink-0 ${
@@ -155,7 +156,7 @@ export default function LeaderboardPage() {
                             {entry.total_pages_discovered === 1 ? 'page' : 'pages'}
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     )
                   })}
                 </div>

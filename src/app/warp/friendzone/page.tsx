@@ -35,7 +35,10 @@ export default function FriendzPage() {
   }
 
   const handleGenerateCode = async () => {
-    if (!user) return
+    if (!user) {
+      setError('You must be signed in to generate a friend code.')
+      return
+    }
 
     const newCode = generateCode()
 
@@ -129,12 +132,12 @@ export default function FriendzPage() {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
+      setUser(user)
+
       if (!user) {
-        router.push('/auth/signin')
+        setLoading(false)
         return
       }
-
-      setUser(user)
 
       // Track page discovery
       if (!tracked) {
@@ -234,30 +237,45 @@ export default function FriendzPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="font-mono text-black">code</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={friendCode}
-                    readOnly
-                    className="font-mono text-lg border-2 border-black bg-gray-50"
-                  />
-                  <Button
-                    onClick={handleCopyCode}
-                    variant="outline"
-                    className="border-2 border-black hover:bg-black hover:text-white"
-                  >
-                    {copied ? <Check size={20} /> : <Copy size={20} />}
-                  </Button>
-                </div>
-              </div>
+              {user ? (
+                <>
+                  <div className="space-y-2">
+                    <Label className="font-mono text-black">code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={friendCode}
+                        readOnly
+                        className="font-mono text-lg border-2 border-black bg-gray-50"
+                      />
+                      <Button
+                        onClick={handleCopyCode}
+                        variant="outline"
+                        className="border-2 border-black hover:bg-black hover:text-white"
+                      >
+                        {copied ? <Check size={20} /> : <Copy size={20} />}
+                      </Button>
+                    </div>
+                  </div>
 
-              <Button
-                onClick={handleGenerateCode}
-                className="w-full font-mono bg-black hover:bg-gray-800 text-white"
-              >
-                regenerate code
-              </Button>
+                  <Button
+                    onClick={handleGenerateCode}
+                    className="w-full font-mono bg-black hover:bg-gray-800 text-white"
+                  >
+                    regenerate code
+                  </Button>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 font-mono mb-4">
+                    you must be signed in to generate a friend code
+                  </p>
+                  <Link href="/auth/signin">
+                    <Button className="font-mono bg-black hover:bg-gray-800 text-white">
+                      sign in
+                    </Button>
+                  </Link>
+                </div>
+              )}
 
               <p className="text-xs text-gray-500 font-mono text-center">
                 once someone uses your code, you'll need to regenerate it for others
@@ -290,7 +308,7 @@ export default function FriendzPage() {
                     you now have access to exclusive areas
                   </p>
                 </div>
-              ) : (
+              ) : user ? (
                 <>
                   <div className="space-y-2">
                     <Label className="font-mono text-black">friend code</Label>
@@ -311,6 +329,17 @@ export default function FriendzPage() {
                     submit code
                   </Button>
                 </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 font-mono mb-4">
+                    you must be signed in to use a friend code
+                  </p>
+                  <Link href="/auth/signin">
+                    <Button className="font-mono bg-black hover:bg-gray-800 text-white">
+                      sign in
+                    </Button>
+                  </Link>
+                </div>
               )}
 
               {error && (

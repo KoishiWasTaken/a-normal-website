@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { validatePassword } from '@/lib/validation'
 import MobileNav from '@/components/MobileNav'
@@ -30,6 +31,11 @@ export default function SettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
+  // Bio state
+  const [bio, setBio] = useState('')
+  const [bioLoading, setBioLoading] = useState(false)
+  const [bioMessage, setBioMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -41,10 +47,22 @@ export default function SettingsPage() {
         return
       }
       setUser(user)
+
+      // Load current bio
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('bio')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.bio) {
+        setBio(profile.bio)
+      }
+
       setLoading(false)
     }
     getUser()
-  }, [router, supabase.auth])
+  }, [router, supabase])
 
   const handleEmailChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,6 +155,34 @@ export default function SettingsPage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+    }
+  }
+
+  const handleBioUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBioMessage(null)
+    setBioLoading(true)
+
+    if (!user) {
+      setBioMessage({ type: 'error', text: 'User not found' })
+      setBioLoading(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ bio: bio.trim() || null })
+      .eq('id', user.id)
+
+    setBioLoading(false)
+
+    if (error) {
+      setBioMessage({ type: 'error', text: error.message })
+    } else {
+      setBioMessage({
+        type: 'success',
+        text: 'Bio updated successfully!'
+      })
     }
   }
 
@@ -303,6 +349,49 @@ export default function SettingsPage() {
 
                 <Button type="submit" disabled={passwordLoading} className="font-mono">
                   {passwordLoading ? 'updating...' : 'change password'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Update Bio */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-mono">bio</CardTitle>
+              <CardDescription className="font-mono">
+                tell others about yourself
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleBioUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bio" className="font-mono">your bio</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="no bio set"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="font-mono resize-none"
+                    maxLength={200}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground font-mono text-right">
+                    {bio.length}/200 characters
+                  </p>
+                </div>
+
+                {bioMessage && (
+                  <div className={`text-sm font-mono p-3 rounded border ${
+                    bioMessage.type === 'error'
+                      ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : 'bg-primary/10 text-primary border-primary/20'
+                  }`}>
+                    {bioMessage.text}
+                  </div>
+                )}
+
+                <Button type="submit" disabled={bioLoading} className="font-mono">
+                  {bioLoading ? 'updating...' : 'update bio'}
                 </Button>
               </form>
             </CardContent>

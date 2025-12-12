@@ -15,6 +15,7 @@ interface UserProfile {
   username: string | null
   display_name: string | null
   email: string | null
+  bio: string | null
   created_at: string
 }
 
@@ -60,7 +61,7 @@ export default function ProfilePage() {
       // Fetch user profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('username, display_name, email, created_at')
+        .select('username, display_name, email, bio, created_at')
         .eq('id', user.id)
         .single()
 
@@ -202,6 +203,16 @@ export default function ProfilePage() {
                         <p className="text-xs text-muted-foreground font-mono mt-2">
                           member for {getMemberDuration()}
                         </p>
+                        {profile?.bio && (
+                          <p className="text-sm text-foreground font-mono mt-3 whitespace-pre-wrap">
+                            {profile.bio}
+                          </p>
+                        )}
+                        {!profile?.bio && (
+                          <p className="text-sm text-muted-foreground font-mono mt-3 italic">
+                            no bio set
+                          </p>
+                        )}
                       </div>
                     </div>
                     <Link href="/settings" className="w-full sm:w-auto">
