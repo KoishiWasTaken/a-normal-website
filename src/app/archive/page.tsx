@@ -104,10 +104,13 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   friendzone: 'atypical',
   '4O4': 'atypical',
   libraryofbabel: 'atypical',
+  funfunfun: 'atypical',
   beginningofthebeginning: 'bizarre',
   fortheworthy: 'bizarre',
   celestialinferno: 'bizarre',
-  shanidev: 'bizarre'
+  shanidev: 'bizarre',
+  deepblue: 'bizarre',
+  eyeofthehurricane: 'cryptic'
 }
 
 // Unique tags for Patreon rewards (page_key -> patron name)
@@ -134,12 +137,15 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   friendzone: 104,      // Friend code system
   libraryofbabel: 105,  // Rare 404 redirect + clickable 4O4
   '4O4': 106,           // Rare 404 redirect (0.1%)
+  funfunfun: 107,       // Rare homepage redirect (1/6666)
   // Bizarre (200-299)
   beginningofthebeginning: 200,  // Hidden text in End of the End
   fortheworthy: 201,              // Rare friend link on homepage
   celestialinferno: 202,          // Library puzzle v>e>n>u>s
   shanidev: 203,                  // Vault warp + FV=8 requirement
+  deepblue: 204,                  // FV=72 + invitation code "neptune"
   // Cryptic (300-399)
+  eyeofthehurricane: 300,         // Win chess against Deep Blue AI
   // Diabolical (400-499)
   // Enigmatic (500-599)
 }

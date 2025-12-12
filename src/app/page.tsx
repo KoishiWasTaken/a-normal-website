@@ -13,6 +13,12 @@ export default function HomePage() {
   const supabase = createClient()
 
   useEffect(() => {
+    // 1/6666 chance to redirect to fun page
+    if (Math.random() < 1/6666) {
+      window.location.href = '/fun/fun/fun'
+      return
+    }
+
     // 1/25 chance to show the friend link
     setShowFriendLink(Math.random() < 0.04)
 

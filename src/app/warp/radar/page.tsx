@@ -27,6 +27,7 @@ export default function RadarPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [hasDiscoveredInferno, setHasDiscoveredInferno] = useState(false)
   const [hasDiscoveredShanidev, setHasDiscoveredShanidev] = useState(false)
+  const [hasDiscoveredDeepblue, setHasDiscoveredDeepblue] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -64,6 +65,17 @@ export default function RadarPage() {
         if (shanidevDiscoveries && shanidevDiscoveries.length > 0) {
           setHasDiscoveredShanidev(true)
         }
+
+        // Check if user has discovered Deep Blue
+        const { data: deepblueDiscoveries } = await supabase
+          .from('page_discoveries')
+          .select('page_id, pages!inner(page_key)')
+          .eq('user_id', user.id)
+          .eq('pages.page_key', 'deepblue')
+
+        if (deepblueDiscoveries && deepblueDiscoveries.length > 0) {
+          setHasDiscoveredDeepblue(true)
+        }
       }
     }
 
@@ -95,7 +107,15 @@ export default function RadarPage() {
       destination: '/celestial/shanidev'
     },
     { ra: '06h 51m 07s', dec: '+23° 14\' 33"', label: 'OBJECT-07', name: null, locked: true, hint: null, destination: null },
-    { ra: '01h 18m 42s', dec: '+08° 17\' 54"', label: 'OBJECT-08', name: null, locked: true, hint: null, destination: null },
+    {
+      ra: '01h 18m 42s',
+      dec: '+08° 17\' 54"',
+      label: hasDiscoveredDeepblue ? 'Neptune' : 'OBJECT-08',
+      name: hasDiscoveredDeepblue ? 'Neptune' : null,
+      locked: !hasDiscoveredDeepblue,
+      hint: hasDiscoveredDeepblue ? null : 'Your Party Invitation',
+      destination: '/celestial/deepblue'
+    },
     { ra: '23h 42m 29s', dec: '-05° 33\' 26"', label: 'OBJECT-09', name: null, locked: true, hint: null, destination: null },
     { ra: '19h 28m 15s', dec: '+22° 47\' 38"', label: 'OBJECT-10', name: null, locked: true, hint: null, destination: null },
   ]
