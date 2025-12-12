@@ -34,12 +34,19 @@ export default function VaultPage() {
     // Convert grid to string for pattern matching
     const pattern = grid.map(row => row.map(cell => cell ? '1' : '0').join('')).join('')
 
+    // Debug: log the pattern
+    console.log('Warp pattern entered:', pattern)
+
     // Define valid patterns and their destinations
     const patterns: { [key: string]: string } = {
       '1001110110111001': '/warp/invertigo',
       '0101110100011111': '/warp/radar',
+      '0000000000000001': '/warp/endoftheend',
       // Add more patterns here as you create more secret pages
     }
+
+    console.log('Valid patterns:', Object.keys(patterns))
+    console.log('Pattern match:', patterns[pattern] || 'none')
 
     if (patterns[pattern]) {
       // Valid pattern - navigate to the secret page
