@@ -14,8 +14,7 @@ const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('')
 // Define puzzle combinations that lead to files
 // Format: { path: 'a/b/c', fileName: 'secret.txt', destination: '/some/page' }
 const PUZZLE_COMBINATIONS: Array<{ path: string; fileName: string; destination: string }> = [
-  // Add puzzle combinations here in the future
-  // Example: { path: 'a/b/c', fileName: 'hidden.txt', destination: '/secret/page' }
+  { path: 'v/e/n/u/s', fileName: 'venus.dat', destination: '/celestial/inferno' }
 ]
 
 export default function LibraryOfBabelPage() {

@@ -65,9 +65,10 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   endoftheend: 'atypical',
   friendzone: 'atypical',
   '4O4': 'atypical',
+  libraryofbabel: 'atypical',
   beginningofthebeginning: 'bizarre',
   fortheworthy: 'bizarre',
-  libraryofbabel: 'bizarre'
+  celestialinferno: 'bizarre'
 }
 
 export default function IndexPage() {

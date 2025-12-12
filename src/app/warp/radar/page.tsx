@@ -34,16 +34,16 @@ export default function RadarPage() {
 
   // Celestial coordinates - Sun and 9 planets including Pluto
   const coordinates = [
-    { ra: '00h 00m 00s', dec: '+00° 00\' 00"', label: 'OBJECT-01' },
-    { ra: '12h 47m 23s', dec: '-03° 41\' 18"', label: 'OBJECT-02' },
-    { ra: '15h 23m 44s', dec: '-18° 28\' 35"', label: 'OBJECT-03' },
-    { ra: '09h 14m 56s', dec: '+18° 44\' 23"', label: 'OBJECT-04' },
-    { ra: '21h 33m 18s', dec: '-14° 22\' 47"', label: 'OBJECT-05' },
-    { ra: '04h 38m 52s', dec: '+19° 52\' 11"', label: 'OBJECT-06' },
-    { ra: '06h 51m 07s', dec: '+23° 14\' 33"', label: 'OBJECT-07' },
-    { ra: '01h 18m 42s', dec: '+08° 17\' 54"', label: 'OBJECT-08' },
-    { ra: '23h 42m 29s', dec: '-05° 33\' 26"', label: 'OBJECT-09' },
-    { ra: '19h 28m 15s', dec: '+22° 47\' 38"', label: 'OBJECT-10' },
+    { ra: '00h 00m 00s', dec: '+00° 00\' 00"', label: 'OBJECT-01', status: 'LOCKED' },
+    { ra: '12h 47m 23s', dec: '-03° 41\' 18"', label: 'OBJECT-02', status: 'LOCKED' },
+    { ra: '15h 23m 44s', dec: '-18° 28\' 35"', label: 'OBJECT-03', status: 'AVAILABLE IN LIBRARY' }, // Venus
+    { ra: '09h 14m 56s', dec: '+18° 44\' 23"', label: 'OBJECT-04', status: 'LOCKED' },
+    { ra: '21h 33m 18s', dec: '-14° 22\' 47"', label: 'OBJECT-05', status: 'LOCKED' },
+    { ra: '04h 38m 52s', dec: '+19° 52\' 11"', label: 'OBJECT-06', status: 'LOCKED' },
+    { ra: '06h 51m 07s', dec: '+23° 14\' 33"', label: 'OBJECT-07', status: 'LOCKED' },
+    { ra: '01h 18m 42s', dec: '+08° 17\' 54"', label: 'OBJECT-08', status: 'LOCKED' },
+    { ra: '23h 42m 29s', dec: '-05° 33\' 26"', label: 'OBJECT-09', status: 'LOCKED' },
+    { ra: '19h 28m 15s', dec: '+22° 47\' 38"', label: 'OBJECT-10', status: 'LOCKED' },
   ]
 
   if (loading) {
@@ -111,7 +111,7 @@ export default function RadarPage() {
           {/* Coordinates Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {coordinates.map((coord, index) => (
-              <Card 
+              <Card
                 key={index}
                 className="border-cyan-900/50 bg-gradient-to-br from-slate-950/90 to-purple-950/50 backdrop-blur hover:border-cyan-500/50 transition-all group"
               >
@@ -137,7 +137,9 @@ export default function RadarPage() {
                   <div className="pt-2 border-t border-cyan-900/30">
                     <div className="flex items-center gap-2 text-xs text-cyan-400/40 font-mono">
                       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
-                      <span>LOCKED</span>
+                      <span className={coord.status === 'AVAILABLE IN LIBRARY' ? 'text-purple-400 font-bold' : ''}>
+                        {coord.status}
+                      </span>
                       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
                     </div>
                   </div>
@@ -157,7 +159,7 @@ export default function RadarPage() {
                   </p>
                 </div>
                 <p className="text-xs md:text-sm font-mono text-purple-200/70 leading-relaxed">
-                  coordinates logged. celestial objects detected within scanning range. 
+                  coordinates logged. celestial objects detected within scanning range.
                   classification: unknown. origin: classified. purpose: under investigation.
                 </p>
                 <div className="pt-2 text-xs font-mono text-purple-400/50">
@@ -167,27 +169,7 @@ export default function RadarPage() {
             </CardContent>
           </Card>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <Card className="border-cyan-900/30 bg-black/50 backdrop-blur">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-mono font-bold text-cyan-400">10</div>
-                <div className="text-xs text-cyan-300/60 font-mono mt-1">OBJECTS</div>
-              </CardContent>
-            </Card>
-            <Card className="border-cyan-900/30 bg-black/50 backdrop-blur">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-mono font-bold text-purple-400">∞</div>
-                <div className="text-xs text-cyan-300/60 font-mono mt-1">DISTANCE</div>
-              </CardContent>
-            </Card>
-            <Card className="border-cyan-900/30 bg-black/50 backdrop-blur">
-              <CardContent className="pt-6">
-                <div className="text-2xl font-mono font-bold text-cyan-400">???</div>
-                <div className="text-xs text-cyan-300/60 font-mono mt-1">CLASSIFIED</div>
-              </CardContent>
-            </Card>
-          </div>
+
         </div>
       </main>
 
