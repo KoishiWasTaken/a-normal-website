@@ -195,6 +195,16 @@ export default function IndexPage() {
     return difficultyLevels[level]
   }
 
+  const getDifficultyLevel = (pageKey: string): DifficultyLevel => {
+    return pageDifficulties[pageKey] || 'plain'
+  }
+
+  const canShowVisitLink = (pageKey: string): boolean => {
+    const level = getDifficultyLevel(pageKey)
+    // Hide visit link for Bizarre and harder difficulties
+    return level !== 'bizarre' && level !== 'cryptic' && level !== 'diabolical' && level !== 'enigmatic'
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -297,7 +307,7 @@ export default function IndexPage() {
                               {selectedPage.page_url}
                             </CardDescription>
                           </div>
-                          {selectedPage.can_navigate && (
+                          {selectedPage.can_navigate && canShowVisitLink(selectedPage.page_key) && (
                             <Link href={selectedPage.page_url} className="block sm:inline-block">
                               <Button size="sm" className="font-mono gap-2 w-full sm:w-auto">
                                 <ExternalLink size={16} />
