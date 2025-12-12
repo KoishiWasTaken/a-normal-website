@@ -47,9 +47,6 @@ export default function DeepBluePage() {
   // Generate stars once on mount
   const stars = useMemo(() => generateStars(), [])
 
-  // Initialize Stockfish engine
-  const [stockfish, setStockfish] = useState<Worker | null>(null)
-
   useEffect(() => {
     const initGame = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -67,27 +64,10 @@ export default function DeepBluePage() {
         p_page_key: 'deepblue'
       })
 
-      // Initialize Stockfish from CDN
-      try {
-        const engine = new Worker('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js')
-        engine.postMessage('uci')
-        engine.postMessage('setoption name Skill Level value 20') // Maximum difficulty
-        engine.postMessage('isready')
-        setStockfish(engine)
-      } catch (error) {
-        console.error('Failed to initialize Stockfish:', error)
-      }
-
       setLoading(false)
     }
 
     initGame()
-
-    return () => {
-      if (stockfish) {
-        stockfish.terminate()
-      }
-    }
   }, [router, supabase])
 
   // Countdown timer
@@ -156,39 +136,52 @@ export default function DeepBluePage() {
     return false
   }, [handleWin, handleLoss])
 
-  // AI move using Stockfish
+  // Simple but challenging AI
   const makeAiMove = useCallback(() => {
-    if (!stockfish || gameOver) return
+    if (gameOver) return
 
-    const fen = game.fen()
+    const possibleMoves = game.moves({ verbose: true })
 
-    stockfish.postMessage(`position fen ${fen}`)
-    stockfish.postMessage('go depth 15') // Decent depth for challenging play
+    if (possibleMoves.length === 0) return
 
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data
-      if (typeof message === 'string' && message.startsWith('bestmove')) {
-        const move = message.split(' ')[1]
+    // Evaluate moves: prioritize captures, checks, and center control
+    const evaluateMove = (move: any) => {
+      let score = Math.random() * 10 // Add randomness for variety
 
-        try {
-          const gameCopy = new Chess(game.fen())
-          gameCopy.move({
-            from: move.substring(0, 2),
-            to: move.substring(2, 4),
-            promotion: move[4] || 'q'
-          })
-          setGame(gameCopy)
-          checkGameStatus(gameCopy)
-        } catch (error) {
-          console.error('AI move error:', error)
-        }
-
-        stockfish.removeEventListener('message', handleMessage)
+      // Strongly prioritize captures
+      if (move.captured) {
+        const pieceValues: any = { p: 10, n: 30, b: 30, r: 50, q: 90 }
+        score += pieceValues[move.captured] || 10
       }
+
+      // Value center control
+      const centerSquares = ['e4', 'e5', 'd4', 'd5']
+      if (centerSquares.includes(move.to)) score += 15
+
+      // Checks are valuable
+      const testGame = new Chess(game.fen())
+      testGame.move(move)
+      if (testGame.isCheck()) score += 25
+      if (testGame.isCheckmate()) score += 10000 // Always take checkmate
+
+      return score
     }
 
-    stockfish.addEventListener('message', handleMessage)
-  }, [game, stockfish, gameOver, checkGameStatus])
+    // Sort moves by evaluation score
+    const scoredMoves = possibleMoves.map(move => ({
+      move,
+      score: evaluateMove(move)
+    })).sort((a, b) => b.score - a.score)
+
+    // Pick randomly from top 3 moves for variety
+    const topMoves = scoredMoves.slice(0, 3)
+    const selectedMove = topMoves[Math.floor(Math.random() * topMoves.length)].move
+
+    const gameCopy = new Chess(game.fen())
+    gameCopy.move(selectedMove)
+    setGame(gameCopy)
+    checkGameStatus(gameCopy)
+  }, [game, gameOver, checkGameStatus])
 
   // Get possible moves for a square
   const getMoveOptions = (square: Square) => {
@@ -415,7 +408,17 @@ export default function DeepBluePage() {
         </div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 pt-32">
+        {/* Title */}
+        <div className="absolute top-8 left-0 right-0 text-center">
+          <h1 className="text-4xl md:text-5xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+            DEEP BLUE
+          </h1>
+          <p className="text-blue-300/60 font-mono text-sm mt-2">
+            the ultimate challenge
+          </p>
+        </div>
+
         {/* Timer */}
         <div className="mb-8">
           <div className={`text-5xl md:text-6xl font-mono font-bold ${
@@ -433,6 +436,7 @@ export default function DeepBluePage() {
           <Chessboard
             position={game.fen()}
             onPieceDrop={onDrop}
+            onPieceClick={onSquareClick}
             onSquareClick={onSquareClick}
             boardOrientation="white"
             arePiecesDraggable={!gameOver && game.turn() === 'w'}
@@ -473,16 +477,6 @@ export default function DeepBluePage() {
               )}
             </div>
           )}
-        </div>
-
-        {/* Title */}
-        <div className="absolute top-8 left-0 right-0 text-center">
-          <h1 className="text-4xl md:text-5xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-            DEEP BLUE
-          </h1>
-          <p className="text-blue-300/60 font-mono text-sm mt-2">
-            the ultimate challenge
-          </p>
         </div>
       </div>
     </div>
