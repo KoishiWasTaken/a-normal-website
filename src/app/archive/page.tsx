@@ -34,6 +34,38 @@ interface AllPagesEntry extends PageInfo {
   discovery?: Discovery
 }
 
+type DifficultyLevel = 'plain' | 'atypical' | 'bizarre' | 'cryptic' | 'diabolical' | 'enigmatic'
+
+interface DifficultyConfig {
+  symbol: string
+  label: string
+  color: string
+}
+
+const difficultyLevels: Record<DifficultyLevel, DifficultyConfig> = {
+  plain: { symbol: '○', label: 'Plain', color: 'text-muted-foreground' },
+  atypical: { symbol: 'α', label: 'Atypical', color: 'text-blue-400' },
+  bizarre: { symbol: 'β', label: 'Bizarre', color: 'text-purple-400' },
+  cryptic: { symbol: 'γ', label: 'Cryptic', color: 'text-orange-400' },
+  diabolical: { symbol: 'δ', label: 'Diabolical', color: 'text-red-400' },
+  enigmatic: { symbol: 'ε', label: 'Enigmatic', color: 'text-pink-400' }
+}
+
+const pageDifficulties: Record<string, DifficultyLevel> = {
+  homepage: 'plain',
+  archive: 'plain',
+  profile: 'plain',
+  leaderboard: 'plain',
+  settings: 'plain',
+  '404': 'plain',
+  forbidden: 'plain',
+  vault: 'atypical',
+  invertigo: 'atypical',
+  radar: 'atypical',
+  endoftheend: 'atypical',
+  beginningofthebeginning: 'bizarre'
+}
+
 export default function IndexPage() {
   const [allPages, setAllPages] = useState<AllPagesEntry[]>([])
   const [selectedPage, setSelectedPage] = useState<AllPagesEntry | null>(null)
@@ -153,6 +185,11 @@ export default function IndexPage() {
     })
   }
 
+  const getDifficulty = (pageKey: string): DifficultyConfig => {
+    const level = pageDifficulties[pageKey] || 'plain'
+    return difficultyLevels[level]
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -192,27 +229,35 @@ export default function IndexPage() {
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="space-y-1 max-h-[400px] lg:max-h-[calc(100vh-200px)] overflow-y-auto">
-                      {allPages.map((page, index) => (
-                        <button
-                          key={page.id}
-                          onClick={() => setSelectedPage(page)}
-                          className={`w-full text-left px-3 md:px-4 py-2 font-mono text-xs md:text-sm transition-colors flex items-center justify-between ${
-                            selectedPage?.id === page.id
-                              ? 'bg-primary/10 text-primary border-l-2 border-primary'
-                              : 'hover:bg-muted text-foreground'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2 truncate">
-                            {!page.discovered && <Lock size={12} className="md:w-[14px] md:h-[14px] flex-shrink-0" />}
-                            <span className="truncate">
-                              {page.discovered ? page.page_name : '???'}
+                      {allPages.map((page, index) => {
+                        const difficulty = getDifficulty(page.page_key)
+                        return (
+                          <button
+                            key={page.id}
+                            onClick={() => setSelectedPage(page)}
+                            className={`w-full text-left px-3 md:px-4 py-2 font-mono text-xs md:text-sm transition-colors flex items-center justify-between ${
+                              selectedPage?.id === page.id
+                                ? 'bg-primary/10 text-primary border-l-2 border-primary'
+                                : 'hover:bg-muted text-foreground'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2 truncate">
+                              {!page.discovered && <Lock size={12} className="md:w-[14px] md:h-[14px] flex-shrink-0" />}
+                              {page.discovered && (
+                                <span className={`${difficulty.color} font-bold flex-shrink-0`} title={difficulty.label}>
+                                  {difficulty.symbol}
+                                </span>
+                              )}
+                              <span className="truncate">
+                                {page.discovered ? page.page_name : '???'}
+                              </span>
                             </span>
-                          </span>
-                          {selectedPage?.id === page.id && (
-                            <ChevronRight size={14} className="md:w-4 md:h-4 flex-shrink-0" />
-                          )}
-                        </button>
-                      ))}
+                            {selectedPage?.id === page.id && (
+                              <ChevronRight size={14} className="md:w-4 md:h-4 flex-shrink-0" />
+                            )}
+                          </button>
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -226,10 +271,23 @@ export default function IndexPage() {
                     <Card>
                       <CardHeader>
                         <div className="space-y-3">
-                          <div className="space-y-1">
-                            <CardTitle className="text-xl md:text-2xl font-mono">
-                              {selectedPage.page_name}
-                            </CardTitle>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <CardTitle className="text-xl md:text-2xl font-mono">
+                                {selectedPage.page_name}
+                              </CardTitle>
+                              {(() => {
+                                const difficulty = getDifficulty(selectedPage.page_key)
+                                return (
+                                  <span
+                                    className={`${difficulty.color} font-mono text-xs px-2 py-1 border rounded ${difficulty.color.replace('text-', 'border-')}`}
+                                    title={`Difficulty: ${difficulty.label}`}
+                                  >
+                                    {difficulty.symbol} {difficulty.label}
+                                  </span>
+                                )
+                              })()}
+                            </div>
                             <CardDescription className="font-mono text-xs break-all">
                               {selectedPage.page_url}
                             </CardDescription>
