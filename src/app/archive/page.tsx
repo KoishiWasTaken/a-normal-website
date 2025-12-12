@@ -40,15 +40,53 @@ interface DifficultyConfig {
   symbol: string
   label: string
   color: string
+  description: string
+}
+
+interface UniqueTag {
+  symbol: string
+  label: string
+  color: string
+  patron: string | null
 }
 
 const difficultyLevels: Record<DifficultyLevel, DifficultyConfig> = {
-  plain: { symbol: '○', label: 'Plain', color: 'text-muted-foreground' },
-  atypical: { symbol: 'α', label: 'Atypical', color: 'text-blue-400' },
-  bizarre: { symbol: 'β', label: 'Bizarre', color: 'text-purple-400' },
-  cryptic: { symbol: 'γ', label: 'Cryptic', color: 'text-orange-400' },
-  diabolical: { symbol: 'δ', label: 'Diabolical', color: 'text-red-400' },
-  enigmatic: { symbol: 'ε', label: 'Enigmatic', color: 'text-pink-400' }
+  plain: {
+    symbol: '○',
+    label: 'Plain',
+    color: 'text-muted-foreground',
+    description: 'Easy to find - visible to all visitors'
+  },
+  atypical: {
+    symbol: 'α',
+    label: 'Atypical',
+    color: 'text-blue-400',
+    description: 'Requires some exploration or pattern recognition'
+  },
+  bizarre: {
+    symbol: 'β',
+    label: 'Bizarre',
+    color: 'text-purple-400',
+    description: 'Hidden through multiple steps or rare encounters'
+  },
+  cryptic: {
+    symbol: 'γ',
+    label: 'Cryptic',
+    color: 'text-orange-400',
+    description: 'Extremely obscure - requires deep investigation'
+  },
+  diabolical: {
+    symbol: 'δ',
+    label: 'Diabolical',
+    color: 'text-red-400',
+    description: 'Nearly impossible to find without external hints'
+  },
+  enigmatic: {
+    symbol: 'ε',
+    label: 'Enigmatic',
+    color: 'text-pink-400',
+    description: 'The ultimate mystery - beyond conventional discovery'
+  }
 }
 
 const pageDifficulties: Record<string, DifficultyLevel> = {
@@ -68,7 +106,14 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   libraryofbabel: 'atypical',
   beginningofthebeginning: 'bizarre',
   fortheworthy: 'bizarre',
-  celestialinferno: 'bizarre'
+  celestialinferno: 'bizarre',
+  shanidev: 'bizarre'
+}
+
+// Unique tags for Patreon rewards (page_key -> patron name)
+const pageUniqueTags: Record<string, string> = {
+  // Example: 'somepage': 'JohnDoe'
+  // Add Patreon reward pages here
 }
 
 // Subjective difficulty ordering within each difficulty level (lower = easier)
@@ -93,9 +138,16 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   beginningofthebeginning: 200,  // Hidden text in End of the End
   fortheworthy: 201,              // Rare friend link on homepage
   celestialinferno: 202,          // Library puzzle v>e>n>u>s
+  shanidev: 203,                  // Vault warp + FV=8 requirement
   // Cryptic (300-399)
   // Diabolical (400-499)
   // Enigmatic (500-599)
+}
+
+// Display name overrides for specific pages
+const pageDisplayNames: Record<string, string> = {
+  celestialinferno: 'Inferno',
+  shanidev: 'Lord Saturn'
 }
 
 const difficultyOrder: Record<DifficultyLevel, number> = {
@@ -112,6 +164,8 @@ export default function IndexPage() {
   const [selectedPage, setSelectedPage] = useState<AllPagesEntry | null>(null)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
+  const [hoveredDifficulty, setHoveredDifficulty] = useState<string | null>(null)
+  const [hoveredUnique, setHoveredUnique] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -238,6 +292,21 @@ export default function IndexPage() {
     return pageDifficulties[pageKey] || 'plain'
   }
 
+  const getUniqueTag = (pageKey: string): UniqueTag | null => {
+    const patron = pageUniqueTags[pageKey]
+    if (!patron) return null
+    return {
+      symbol: 'υ',
+      label: 'Unique',
+      color: 'text-yellow-400',
+      patron
+    }
+  }
+
+  const getDisplayName = (page: AllPagesEntry): string => {
+    return pageDisplayNames[page.page_key] || page.page_name
+  }
+
   const canShowVisitLink = (pageKey: string): boolean => {
     const level = getDifficultyLevel(pageKey)
     // Hide visit link for Bizarre and harder difficulties
@@ -309,6 +378,8 @@ export default function IndexPage() {
                     <div className="space-y-1 max-h-[400px] lg:max-h-[calc(100vh-200px)] overflow-y-auto">
                       {allPages.map((page, index) => {
                         const difficulty = getDifficulty(page.page_key)
+                        const uniqueTag = getUniqueTag(page.page_key)
+                        const displayName = getDisplayName(page)
                         return (
                           <button
                             key={page.id}
@@ -322,12 +393,17 @@ export default function IndexPage() {
                             <span className="flex items-center gap-2 truncate">
                               {!page.discovered && <Lock size={12} className="md:w-[14px] md:h-[14px] flex-shrink-0" />}
                               {page.discovered && (
-                                <span className={`${difficulty.color} font-bold flex-shrink-0`} title={difficulty.label}>
+                                <span className={`${difficulty.color} font-bold flex-shrink-0`}>
                                   {difficulty.symbol}
                                 </span>
                               )}
+                              {page.discovered && uniqueTag && (
+                                <span className={`${uniqueTag.color} font-bold flex-shrink-0`}>
+                                  {uniqueTag.symbol}
+                                </span>
+                              )}
                               <span className="truncate">
-                                {page.discovered ? page.page_name : '???'}
+                                {page.discovered ? displayName : '???'}
                               </span>
                             </span>
                             {selectedPage?.id === page.id && (
@@ -352,17 +428,48 @@ export default function IndexPage() {
                           <div className="space-y-2">
                             <div className="flex items-center gap-3 flex-wrap">
                               <CardTitle className="text-xl md:text-2xl font-mono">
-                                {selectedPage.page_name}
+                                {getDisplayName(selectedPage)}
                               </CardTitle>
                               {(() => {
                                 const difficulty = getDifficulty(selectedPage.page_key)
+                                const uniqueTag = getUniqueTag(selectedPage.page_key)
                                 return (
-                                  <span
-                                    className={`${difficulty.color} font-mono text-xs px-2 py-1 border rounded ${difficulty.color.replace('text-', 'border-')}`}
-                                    title={`Difficulty: ${difficulty.label}`}
-                                  >
-                                    {difficulty.symbol} {difficulty.label}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                      <span
+                                        className={`${difficulty.color} font-mono text-xs px-2 py-1 border rounded ${difficulty.color.replace('text-', 'border-')} cursor-help`}
+                                        onMouseEnter={() => setHoveredDifficulty(selectedPage.page_key)}
+                                        onMouseLeave={() => setHoveredDifficulty(null)}
+                                      >
+                                        {difficulty.symbol} {difficulty.label}
+                                      </span>
+                                      {hoveredDifficulty === selectedPage.page_key && (
+                                        <div className="absolute z-50 left-0 top-full mt-2 w-64 p-3 bg-popover border border-border rounded-md shadow-lg">
+                                          <p className="text-xs font-mono text-popover-foreground">
+                                            {difficulty.description}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {uniqueTag && (
+                                      <div className="relative">
+                                        <span
+                                          className={`${uniqueTag.color} font-mono text-xs px-2 py-1 border rounded ${uniqueTag.color.replace('text-', 'border-')} cursor-help`}
+                                          onMouseEnter={() => setHoveredUnique(selectedPage.page_key)}
+                                          onMouseLeave={() => setHoveredUnique(null)}
+                                        >
+                                          {uniqueTag.symbol} {uniqueTag.label}
+                                        </span>
+                                        {hoveredUnique === selectedPage.page_key && (
+                                          <div className="absolute z-50 left-0 top-full mt-2 w-64 p-3 bg-popover border border-border rounded-md shadow-lg">
+                                            <p className="text-xs font-mono text-popover-foreground">
+                                              Patreon reward for {uniqueTag.patron}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 )
                               })()}
                             </div>

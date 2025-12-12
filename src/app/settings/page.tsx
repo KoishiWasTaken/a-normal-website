@@ -36,6 +36,11 @@ export default function SettingsPage() {
   const [bioLoading, setBioLoading] = useState(false)
   const [bioMessage, setBioMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
+  // Fun Value state
+  const [funValue, setFunValue] = useState(0)
+  const [funValueLoading, setFunValueLoading] = useState(false)
+  const [funValueMessage, setFunValueMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -48,15 +53,18 @@ export default function SettingsPage() {
       }
       setUser(user)
 
-      // Load current bio
+      // Load current bio and fun value
       const { data: profile } = await supabase
         .from('profiles')
-        .select('bio')
+        .select('bio, fun_value')
         .eq('id', user.id)
         .single()
 
       if (profile?.bio) {
         setBio(profile.bio)
+      }
+      if (profile?.fun_value !== null && profile?.fun_value !== undefined) {
+        setFunValue(profile.fun_value)
       }
 
       setLoading(false)
@@ -186,6 +194,33 @@ export default function SettingsPage() {
     }
   }
 
+  const handleFunValueUpdate = async () => {
+    setFunValueMessage(null)
+    setFunValueLoading(true)
+
+    if (!user) {
+      setFunValueMessage({ type: 'error', text: 'User not found' })
+      setFunValueLoading(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ fun_value: funValue })
+      .eq('id', user.id)
+
+    setFunValueLoading(false)
+
+    if (error) {
+      setFunValueMessage({ type: 'error', text: error.message })
+    } else {
+      setFunValueMessage({
+        type: 'success',
+        text: 'Fun Value updated!'
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -218,6 +253,49 @@ export default function SettingsPage() {
               manage your account
             </p>
           </div>
+
+          {/* Update Bio */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-mono">bio</CardTitle>
+              <CardDescription className="font-mono">
+                tell others about yourself
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleBioUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bio" className="font-mono">your bio</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="no bio set"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="font-mono resize-none"
+                    maxLength={200}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground font-mono text-right">
+                    {bio.length}/200 characters
+                  </p>
+                </div>
+
+                {bioMessage && (
+                  <div className={`text-sm font-mono p-3 rounded border ${
+                    bioMessage.type === 'error'
+                      ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : 'bg-primary/10 text-primary border-primary/20'
+                  }`}>
+                    {bioMessage.text}
+                  </div>
+                )}
+
+                <Button type="submit" disabled={bioLoading} className="font-mono">
+                  {bioLoading ? 'updating...' : 'update bio'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
 
           {/* Change Email */}
           <Card>
@@ -354,46 +432,50 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Update Bio */}
+          {/* Fun Value Slider */}
           <Card>
             <CardHeader>
-              <CardTitle className="font-mono">bio</CardTitle>
+              <CardTitle className="font-mono">fun value</CardTitle>
               <CardDescription className="font-mono">
-                tell others about yourself
+                adjust your fun level
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleBioUpdate} className="space-y-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="bio" className="font-mono">your bio</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder="no bio set"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="font-mono resize-none"
-                    maxLength={200}
-                    rows={4}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="funValue" className="font-mono">current value</Label>
+                    <span className="font-mono text-primary font-bold">{funValue}</span>
+                  </div>
+                  <input
+                    id="funValue"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={funValue}
+                    onChange={(e) => setFunValue(Number(e.target.value))}
+                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                   />
-                  <p className="text-xs text-muted-foreground font-mono text-right">
-                    {bio.length}/200 characters
-                  </p>
+                  <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                    <span>0</span>
+                    <span>100</span>
+                  </div>
                 </div>
 
-                {bioMessage && (
+                {funValueMessage && (
                   <div className={`text-sm font-mono p-3 rounded border ${
-                    bioMessage.type === 'error'
+                    funValueMessage.type === 'error'
                       ? 'bg-destructive/10 text-destructive border-destructive/20'
                       : 'bg-primary/10 text-primary border-primary/20'
                   }`}>
-                    {bioMessage.text}
+                    {funValueMessage.text}
                   </div>
                 )}
 
-                <Button type="submit" disabled={bioLoading} className="font-mono">
-                  {bioLoading ? 'updating...' : 'update bio'}
+                <Button onClick={handleFunValueUpdate} disabled={funValueLoading} className="font-mono">
+                  {funValueLoading ? 'setting...' : 'set'}
                 </Button>
-              </form>
+              </div>
             </CardContent>
           </Card>
 

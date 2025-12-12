@@ -26,6 +26,7 @@ export default function RadarPage() {
   const [tracked, setTracked] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [hasDiscoveredInferno, setHasDiscoveredInferno] = useState(false)
+  const [hasDiscoveredShanidev, setHasDiscoveredShanidev] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -43,14 +44,25 @@ export default function RadarPage() {
         setTracked(true)
 
         // Check if user has discovered Celestial Inferno
-        const { data: discoveries } = await supabase
+        const { data: infernoDiscoveries } = await supabase
           .from('page_discoveries')
           .select('page_id, pages!inner(page_key)')
           .eq('user_id', user.id)
           .eq('pages.page_key', 'celestialinferno')
 
-        if (discoveries && discoveries.length > 0) {
+        if (infernoDiscoveries && infernoDiscoveries.length > 0) {
           setHasDiscoveredInferno(true)
+        }
+
+        // Check if user has discovered Shanidev (Lord Saturn)
+        const { data: shanidevDiscoveries } = await supabase
+          .from('page_discoveries')
+          .select('page_id, pages!inner(page_key)')
+          .eq('user_id', user.id)
+          .eq('pages.page_key', 'shanidev')
+
+        if (shanidevDiscoveries && shanidevDiscoveries.length > 0) {
+          setHasDiscoveredShanidev(true)
         }
       }
     }
@@ -73,7 +85,15 @@ export default function RadarPage() {
     },
     { ra: '09h 14m 56s', dec: '+18° 44\' 23"', label: 'OBJECT-04', name: null, locked: true, hint: null, destination: null },
     { ra: '21h 33m 18s', dec: '-14° 22\' 47"', label: 'OBJECT-05', name: null, locked: true, hint: null, destination: null },
-    { ra: '04h 38m 52s', dec: '+19° 52\' 11"', label: 'OBJECT-06', name: null, locked: true, hint: null, destination: null },
+    {
+      ra: '04h 38m 52s',
+      dec: '+19° 52\' 11"',
+      label: hasDiscoveredShanidev ? 'Saturn' : 'OBJECT-06',
+      name: hasDiscoveredShanidev ? 'Saturn' : null,
+      locked: !hasDiscoveredShanidev,
+      hint: hasDiscoveredShanidev ? null : 'Warp at FV8',
+      destination: '/celestial/shanidev'
+    },
     { ra: '06h 51m 07s', dec: '+23° 14\' 33"', label: 'OBJECT-07', name: null, locked: true, hint: null, destination: null },
     { ra: '01h 18m 42s', dec: '+08° 17\' 54"', label: 'OBJECT-08', name: null, locked: true, hint: null, destination: null },
     { ra: '23h 42m 29s', dec: '-05° 33\' 26"', label: 'OBJECT-09', name: null, locked: true, hint: null, destination: null },

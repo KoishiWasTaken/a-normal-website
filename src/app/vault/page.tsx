@@ -43,6 +43,7 @@ export default function VaultPage() {
       '0101110100011111': '/warp/radar',
       '0000000000000001': '/warp/endoftheend',
       '0110111111110110': '/warp/friendzone',
+      '1110010001110101': '/celestial/shanidev',
       // Add more patterns here as you create more secret pages
     }
 
