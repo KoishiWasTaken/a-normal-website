@@ -63,7 +63,9 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   invertigo: 'atypical',
   radar: 'atypical',
   endoftheend: 'atypical',
-  beginningofthebeginning: 'bizarre'
+  friendzone: 'atypical',
+  beginningofthebeginning: 'bizarre',
+  fortheworthy: 'bizarre'
 }
 
 export default function IndexPage() {

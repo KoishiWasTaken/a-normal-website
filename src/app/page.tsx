@@ -9,9 +9,13 @@ import MobileNav from '@/components/MobileNav'
 export default function HomePage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showFriendLink, setShowFriendLink] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
+    // 1/25 chance to show the friend link
+    setShowFriendLink(Math.random() < 0.04)
+
     // Track page discovery
     const trackDiscovery = async () => {
       console.log('🔍 Checking authentication...')
@@ -143,7 +147,14 @@ export default function HomePage() {
             </div>
 
             <p className="text-sm text-muted-foreground font-mono">
-              © 2025 a normal website. all rights reserved. probably.
+              © 2025 a normal website. all rights reserved.{' '}
+              {showFriendLink ? (
+                <Link href="/fortheworthy" className="underline hover:text-primary transition-colors">
+                  reserved for your friend. probably.
+                </Link>
+              ) : (
+                'probably.'
+              )}
             </p>
           </div>
         </div>

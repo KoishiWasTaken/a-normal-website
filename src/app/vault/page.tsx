@@ -42,6 +42,7 @@ export default function VaultPage() {
       '1001110110111001': '/warp/invertigo',
       '0101110100011111': '/warp/radar',
       '0000000000000001': '/warp/endoftheend',
+      '0110111111110110': '/warp/friendzone',
       // Add more patterns here as you create more secret pages
     }
 
