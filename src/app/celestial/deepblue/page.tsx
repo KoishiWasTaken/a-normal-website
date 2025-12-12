@@ -116,8 +116,12 @@ export default function DeepBluePage() {
       }
       return true
     }
-    if (currentGame.isDraw() || currentGame.isStalemate() || currentGame.isThreefoldRepetition()) {
-      handleLoss() // Draw counts as loss
+    // All draw conditions count as loss
+    if (currentGame.isDraw() ||
+        currentGame.isStalemate() ||
+        currentGame.isThreefoldRepetition() ||
+        currentGame.isInsufficientMaterial()) {
+      handleLoss() // Draws count as losses
       return true
     }
     return false
