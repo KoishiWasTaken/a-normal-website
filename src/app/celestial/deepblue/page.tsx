@@ -308,28 +308,6 @@ export default function DeepBluePage() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 opacity-60">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950 animate-gradient-shift" />
-      </div>
-
-      <style jsx>{`
-        @keyframes gradient-shift {
-          0%, 100% {
-            background: linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #172554 100%);
-          }
-          33% {
-            background: linear-gradient(135deg, #172554 0%, #1e1b4b 50%, #4c1d95 100%);
-          }
-          66% {
-            background: linear-gradient(135deg, #4c1d95 0%, #172554 50%, #1e1b4b 100%);
-          }
-        }
-        .animate-gradient-shift {
-          animation: gradient-shift 20s ease-in-out infinite;
-        }
-      `}</style>
-
       {/* Animated Galaxy Background */}
       <div className="absolute inset-0">
         {/* Nebula clouds */}
@@ -341,18 +319,17 @@ export default function DeepBluePage() {
 
         {/* Twinkling stars layer 1 - small stars */}
         <div className="absolute inset-0">
-          {stars.smallStars.map((star) => (
+          {[...Array(50)].map((_, i) => (
             <div
-              key={star.id}
+              key={`star-small-${i}`}
               className="absolute bg-white rounded-full animate-pulse"
               style={{
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                top: `${star.top}%`,
-                left: `${star.left}%`,
-                animationDelay: `${star.delay}s`,
-                animationDuration: `${star.duration}s`,
-                boxShadow: `0 0 ${star.size * 2}px rgba(255, 255, 255, 0.8)`
+                width: `${Math.random() * 2 + 1}px`,
+                height: `${Math.random() * 2 + 1}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${Math.random() * 2 + 2}s`
               }}
             />
           ))}
@@ -360,19 +337,18 @@ export default function DeepBluePage() {
 
         {/* Twinkling stars layer 2 - medium stars */}
         <div className="absolute inset-0">
-          {stars.mediumStars.map((star) => (
+          {[...Array(30)].map((_, i) => (
             <div
-              key={star.id}
+              key={`star-med-${i}`}
               className="absolute rounded-full animate-pulse"
               style={{
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                top: `${star.top}%`,
-                left: `${star.left}%`,
-                backgroundColor: star.color,
-                animationDelay: `${star.delay}s`,
-                animationDuration: `${star.duration}s`,
-                boxShadow: `0 0 ${star.size * 3}px ${star.color}`
+                width: `${Math.random() * 3 + 2}px`,
+                height: `${Math.random() * 3 + 2}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                backgroundColor: i % 3 === 0 ? '#93c5fd' : i % 3 === 1 ? '#c4b5fd' : '#ffffff',
+                animationDelay: `${Math.random() * 4}s`,
+                animationDuration: `${Math.random() * 3 + 1}s`
               }}
             />
           ))}
@@ -380,9 +356,9 @@ export default function DeepBluePage() {
 
         {/* Shooting stars */}
         <div className="absolute inset-0">
-          <div className="absolute w-1 h-1 bg-white rounded-full top-[20%] left-[10%] animate-ping" style={{ animationDuration: '3s', animationDelay: '0s', boxShadow: '0 0 8px rgba(255, 255, 255, 0.8)' }} />
-          <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[60%] right-[20%] animate-ping" style={{ animationDuration: '4s', animationDelay: '2s', boxShadow: '0 0 8px rgba(147, 197, 253, 0.8)' }} />
-          <div className="absolute w-1 h-1 bg-purple-300 rounded-full bottom-[30%] left-[70%] animate-ping" style={{ animationDuration: '3.5s', animationDelay: '4s', boxShadow: '0 0 8px rgba(196, 181, 253, 0.8)' }} />
+          <div className="absolute w-1 h-1 bg-white rounded-full top-[20%] left-[10%] animate-ping" style={{ animationDuration: '3s', animationDelay: '0s' }} />
+          <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[60%] right-[20%] animate-ping" style={{ animationDuration: '4s', animationDelay: '2s' }} />
+          <div className="absolute w-1 h-1 bg-purple-300 rounded-full bottom-[30%] left-[70%] animate-ping" style={{ animationDuration: '3.5s', animationDelay: '4s' }} />
         </div>
       </div>
 
