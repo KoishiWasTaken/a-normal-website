@@ -46,6 +46,21 @@ export default function DeepBluePage() {
   // Generate stars once on mount
   const stars = useMemo(() => generateStars(), [])
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🎮 DeepBlue component mounted')
+    console.log('📊 Initial state:', {
+      position,
+      gameOver,
+      turn: game.turn(),
+      isDraggable: !gameOver && game.turn() === 'w'
+    })
+  }, [])
+
+  useEffect(() => {
+    console.log('🔄 Position changed:', position)
+  }, [position])
+
   useEffect(() => {
     const initGame = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -188,8 +203,11 @@ export default function DeepBluePage() {
 
   // Handle piece drop
   const onDrop = (sourceSquare: string, targetSquare: string) => {
+    console.log('🎯 onDrop CALLED!', { sourceSquare, targetSquare, gameOver, turn: game.turn() })
+
     // Don't allow moves if game is over or not player's turn
     if (gameOver || game.turn() !== 'w') {
+      console.log('❌ Move rejected - game over or not player turn')
       return false
     }
 
@@ -202,12 +220,16 @@ export default function DeepBluePage() {
         promotion: 'q' // Always promote to queen
       })
 
+      console.log('♟️ Move result:', move)
+
       // If move is illegal, chess.js returns null
       if (move === null) {
+        console.log('❌ Illegal move')
         return false
       }
 
       // Move is legal - update state
+      console.log('✅ Valid move! Updating state')
       setGame(gameCopy)
       setPosition(gameCopy.fen())
 
@@ -217,12 +239,26 @@ export default function DeepBluePage() {
       }
 
       // Queue AI move after a short delay
+      console.log('🤖 Queuing AI move')
       setTimeout(() => makeAiMove(), 300)
       return true
     } catch (error) {
-      console.error('Move error:', error)
+      console.error('💥 Move error:', error)
       return false
     }
+  }
+
+  // Additional event handlers for debugging
+  const onPieceDragBegin = (piece: string, sourceSquare: string) => {
+    console.log('🔵 DRAG BEGIN:', { piece, sourceSquare })
+  }
+
+  const onPieceDragEnd = (piece: string, sourceSquare: string) => {
+    console.log('🔴 DRAG END:', { piece, sourceSquare })
+  }
+
+  const onSquareClick = (square: string) => {
+    console.log('🟡 SQUARE CLICKED:', square)
   }
 
   const formatTime = (seconds: number) => {
@@ -352,11 +388,18 @@ export default function DeepBluePage() {
 
           <div className="aspect-square shadow-2xl shadow-blue-500/20 rounded-lg overflow-hidden border-4 border-blue-500/30">
             <Chessboard
-              key={position}
+              id="chess-board"
               position={position}
               onPieceDrop={onDrop}
+              onPieceDragBegin={onPieceDragBegin}
+              onPieceDragEnd={onPieceDragEnd}
+              onSquareClick={onSquareClick}
               boardOrientation="white"
               arePiecesDraggable={!gameOver && game.turn() === 'w'}
+              isDraggablePiece={({ piece }) => {
+                console.log('🔍 isDraggablePiece check:', { piece, gameOver, turn: game.turn() })
+                return !gameOver && game.turn() === 'w' && piece[0] === 'w'
+              }}
               customBoardStyle={{
                 borderRadius: '0.5rem'
               }}
