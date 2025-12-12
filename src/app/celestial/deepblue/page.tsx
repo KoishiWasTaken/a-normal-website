@@ -39,8 +39,6 @@ export default function DeepBluePage() {
   const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
   const [gameOver, setGameOver] = useState(false)
   const [gameResult, setGameResult] = useState<'win' | 'lose' | null>(null)
-  const [moveFrom, setMoveFrom] = useState<Square | null>(null)
-  const [optionSquares, setOptionSquares] = useState<Record<string, any>>({})
   const router = useRouter()
   const supabase = createClient()
 
@@ -184,105 +182,7 @@ export default function DeepBluePage() {
   }, [game, gameOver, checkGameStatus])
 
   // Get possible moves for a square
-  const getMoveOptions = (square: Square) => {
-    const moves = game.moves({
-      square,
-      verbose: true
-    })
 
-    if (moves.length === 0) {
-      setOptionSquares({})
-      return false
-    }
-
-    const newSquares: Record<string, any> = {}
-    moves.forEach((move) => {
-      newSquares[move.to] = {
-        background: move.captured
-          ? 'radial-gradient(circle, rgba(239, 68, 68, 0.4) 85%, transparent 85%)'
-          : 'radial-gradient(circle, rgba(34, 197, 94, 0.4) 25%, transparent 25%)',
-        borderRadius: '50%'
-      }
-    })
-    newSquares[square] = {
-      background: 'rgba(59, 130, 246, 0.4)'
-    }
-    setOptionSquares(newSquares)
-    return true
-  }
-
-  // Handle square click
-  const onSquareClick = (square: Square) => {
-    alert(`Clicked square: ${square}`)
-    console.log('=== SQUARE CLICKED ===')
-    console.log('Square:', square)
-    console.log('Game over:', gameOver)
-    console.log('Turn:', game.turn())
-
-    if (gameOver) {
-      console.log('Game is over, returning')
-      return
-    }
-
-    if (game.turn() !== 'w') {
-      console.log('Not white turn, returning')
-      return
-    }
-
-    // If no piece selected, try to select this piece
-    if (!moveFrom) {
-      console.log('No piece selected yet')
-      const piece = game.get(square)
-      console.log('Piece at square:', piece)
-
-      // Only select if there's a white piece on this square
-      if (piece && piece.color === 'w') {
-        console.log('White piece found, getting move options')
-        const hasMoveOptions = getMoveOptions(square)
-        console.log('Has move options:', hasMoveOptions)
-        if (hasMoveOptions) {
-          setMoveFrom(square)
-          console.log('Piece selected at:', square)
-        }
-      } else {
-        console.log('No white piece at this square')
-      }
-      return
-    }
-
-    // Try to make a move
-    const gameCopy = new Chess(game.fen())
-    const move = gameCopy.move({
-      from: moveFrom,
-      to: square,
-      promotion: 'q'
-    })
-
-    if (move === null) {
-      // Invalid move, try selecting new piece at this square
-      const piece = game.get(square)
-      if (piece && piece.color === 'w') {
-        const hasMoveOptions = getMoveOptions(square)
-        setMoveFrom(hasMoveOptions ? square : null)
-      } else {
-        setMoveFrom(null)
-        setOptionSquares({})
-      }
-      return
-    }
-
-    // Valid move made
-    setGame(gameCopy)
-    setMoveFrom(null)
-    setOptionSquares({})
-
-    if (checkGameStatus(gameCopy)) {
-      return
-    }
-
-    // AI's turn
-    setTimeout(() => makeAiMove(), 500)
-  }
 
   // Handle piece drop
   const onDrop = (sourceSquare: string, targetSquare: string) => {
@@ -299,8 +199,6 @@ export default function DeepBluePage() {
       if (move === null) return false // Illegal move
 
       setGame(gameCopy)
-      setMoveFrom(null)
-      setOptionSquares({})
 
       if (checkGameStatus(gameCopy)) {
         return true
@@ -432,21 +330,26 @@ export default function DeepBluePage() {
         </div>
 
         {/* Chess Board */}
-        <div className="w-full max-w-[600px] aspect-square shadow-2xl shadow-blue-500/20 rounded-lg overflow-hidden border-4 border-blue-500/30">
-          <Chessboard
-            position={game.fen()}
-            onPieceDrop={onDrop}
-            onPieceClick={onSquareClick}
-            onSquareClick={onSquareClick}
-            boardOrientation="white"
-            arePiecesDraggable={!gameOver && game.turn() === 'w'}
-            customBoardStyle={{
-              borderRadius: '0.5rem'
-            }}
-            customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
-            customLightSquareStyle={{ backgroundColor: '#475569' }}
-            customSquareStyles={optionSquares}
-          />
+        <div className="w-full max-w-[600px] space-y-4">
+          <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-3 text-center">
+            <p className="text-blue-300 font-mono text-sm">
+              <span className="text-blue-400 font-bold">Drag</span> your pieces to move them
+            </p>
+          </div>
+
+          <div className="aspect-square shadow-2xl shadow-blue-500/20 rounded-lg overflow-hidden border-4 border-blue-500/30">
+            <Chessboard
+              position={game.fen()}
+              onPieceDrop={onDrop}
+              boardOrientation="white"
+              arePiecesDraggable={!gameOver && game.turn() === 'w'}
+              customBoardStyle={{
+                borderRadius: '0.5rem'
+              }}
+              customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
+              customLightSquareStyle={{ backgroundColor: '#475569' }}
+            />
+          </div>
         </div>
 
         {/* Status */}
