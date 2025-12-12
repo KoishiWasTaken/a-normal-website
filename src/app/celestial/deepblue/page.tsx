@@ -53,22 +53,24 @@ export default function DeepBluePage() {
     const initStockfish = async () => {
       try {
         console.log('🤖 Initializing Stockfish engine...')
-        const Stockfish = (await import('stockfish.js')).default
-        const sf = Stockfish()
+        // Import pure JS version (not WASM) to avoid Node.js fs dependency
+        const StockfishModule = await import('stockfish.js/stockfish.js')
+        const Stockfish = StockfishModule.default || StockfishModule
+        const sf = typeof Stockfish === 'function' ? Stockfish() : Stockfish
 
         sf.onmessage = (event: any) => {
           const message = event.data || event
           console.log('🐟 Stockfish:', message)
         }
 
-        // Configure engine for challenging but not unbeatable play
+        // Configure engine for maximum strength
         sf.postMessage('uci')
-        sf.postMessage('setoption name Skill Level value 10') // 0-20, 10 is challenging
+        sf.postMessage('setoption name Skill Level value 20') // 0-20, 20 is maximum strength
         sf.postMessage('setoption name Move Overhead value 100')
         sf.postMessage('isready')
 
         stockfishRef.current = sf
-        console.log('✅ Stockfish initialized (Skill Level 10)')
+        console.log('✅ Stockfish initialized (Skill Level 20 - Maximum Strength)')
       } catch (error) {
         console.error('❌ Failed to initialize Stockfish:', error)
       }
@@ -438,7 +440,7 @@ export default function DeepBluePage() {
               <span className="text-blue-400 font-bold">Drag</span> your pieces to move them
             </p>
             <p className="text-blue-400/60 font-mono text-xs">
-              Powered by Stockfish (Skill Level 10/20)
+              Powered by Stockfish (Maximum Strength)
             </p>
           </div>
 

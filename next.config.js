@@ -3,9 +3,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -29,7 +26,30 @@ const nextConfig = {
         hostname: "ugc.same-assets.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+        pathname: "/**",
+      },
     ],
+  },
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        fs: false,
+      },
+    },
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+    return config;
   },
 };
 
