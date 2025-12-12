@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Chess } from 'chess.js'
@@ -40,11 +40,48 @@ export default function DeepBluePage() {
   const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
   const [gameOver, setGameOver] = useState(false)
   const [gameResult, setGameResult] = useState<'win' | 'lose' | null>(null)
+  const [aiThinking, setAiThinking] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const stockfishRef = useRef<any>(null)
 
   // Generate stars once on mount
   const stars = useMemo(() => generateStars(), [])
+
+  // Initialize Stockfish engine
+  useEffect(() => {
+    const initStockfish = async () => {
+      try {
+        console.log('🤖 Initializing Stockfish engine...')
+        const Stockfish = (await import('stockfish.js')).default
+        const sf = Stockfish()
+
+        sf.onmessage = (event: any) => {
+          const message = event.data || event
+          console.log('🐟 Stockfish:', message)
+        }
+
+        // Configure engine for challenging but not unbeatable play
+        sf.postMessage('uci')
+        sf.postMessage('setoption name Skill Level value 10') // 0-20, 10 is challenging
+        sf.postMessage('setoption name Move Overhead value 100')
+        sf.postMessage('isready')
+
+        stockfishRef.current = sf
+        console.log('✅ Stockfish initialized (Skill Level 10)')
+      } catch (error) {
+        console.error('❌ Failed to initialize Stockfish:', error)
+      }
+    }
+
+    initStockfish()
+
+    return () => {
+      if (stockfishRef.current) {
+        stockfishRef.current.terminate?.()
+      }
+    }
+  }, [])
 
   // Debug logging
   useEffect(() => {
@@ -150,9 +187,9 @@ export default function DeepBluePage() {
     return false
   }, [handleWin, handleLoss])
 
-  // Simple but challenging AI - takes current game state as parameter to avoid stale state
+  // Stockfish AI - much stronger than heuristic
   const makeAiMove = useCallback((currentGame: Chess) => {
-    console.log('🤖 AI analyzing position:', currentGame.fen())
+    console.log('🤖 Stockfish analyzing position:', currentGame.fen())
 
     if (gameOver) {
       console.log('❌ AI: Game is over')
@@ -165,50 +202,66 @@ export default function DeepBluePage() {
     }
 
     const possibleMoves = currentGame.moves({ verbose: true })
-    console.log('🤖 AI found', possibleMoves.length, 'possible moves')
+    console.log('🤖 Stockfish has', possibleMoves.length, 'possible moves')
 
     if (possibleMoves.length === 0) return
 
-    // Evaluate moves: prioritize captures, checks, and center control
-    const evaluateMove = (move: any) => {
-      let score = Math.random() * 10 // Add randomness for variety
-
-      // Strongly prioritize captures
-      if (move.captured) {
-        const pieceValues: any = { p: 10, n: 30, b: 30, r: 50, q: 90 }
-        score += pieceValues[move.captured] || 10
-      }
-
-      // Value center control
-      const centerSquares = ['e4', 'e5', 'd4', 'd5']
-      if (centerSquares.includes(move.to)) score += 15
-
-      // Checks are valuable
-      const testGame = new Chess(currentGame.fen())
-      testGame.move(move)
-      if (testGame.isCheck()) score += 25
-      if (testGame.isCheckmate()) score += 10000 // Always take checkmate
-
-      return score
+    if (!stockfishRef.current) {
+      console.log('⚠️ Stockfish not ready, using fallback AI')
+      // Fallback: pick a random move
+      const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+      const gameCopy = new Chess(currentGame.fen())
+      gameCopy.move(randomMove)
+      setGame(gameCopy)
+      setPosition(gameCopy.fen())
+      setAiThinking(false)
+      checkGameStatus(gameCopy)
+      return
     }
 
-    // Sort moves by evaluation score
-    const scoredMoves = possibleMoves.map(move => ({
-      move,
-      score: evaluateMove(move)
-    })).sort((a, b) => b.score - a.score)
+    setAiThinking(true)
 
-    // Pick randomly from top 3 moves for variety
-    const topMoves = scoredMoves.slice(0, 3)
-    const selectedMove = topMoves[Math.floor(Math.random() * topMoves.length)].move
+    // Set up one-time listener for bestmove
+    const onMessage = (event: any) => {
+      const message = event.data || event
 
-    console.log('🤖 AI selected move:', selectedMove.san, `(${selectedMove.from}→${selectedMove.to})`)
+      if (typeof message === 'string' && message.startsWith('bestmove')) {
+        stockfishRef.current.onmessage = null // Remove listener
 
-    const gameCopy = new Chess(currentGame.fen())
-    gameCopy.move(selectedMove)
-    setGame(gameCopy)
-    setPosition(gameCopy.fen())
-    checkGameStatus(gameCopy)
+        const uciMove = message.split(' ')[1]
+        console.log('🐟 Stockfish recommends:', uciMove)
+
+        try {
+          const gameCopy = new Chess(currentGame.fen())
+          // Convert UCI move (e.g., "e2e4") to chess.js format
+          const from = uciMove.substring(0, 2)
+          const to = uciMove.substring(2, 4)
+          const promotion = uciMove.length > 4 ? uciMove[4] : undefined
+
+          const move = gameCopy.move({ from, to, promotion })
+
+          if (move) {
+            console.log('✅ Stockfish move:', move.san, `(${move.from}→${move.to})`)
+            setGame(gameCopy)
+            setPosition(gameCopy.fen())
+            setAiThinking(false)
+            checkGameStatus(gameCopy)
+          } else {
+            console.error('❌ Invalid move from Stockfish:', uciMove)
+            setAiThinking(false)
+          }
+        } catch (error) {
+          console.error('❌ Error processing Stockfish move:', error)
+          setAiThinking(false)
+        }
+      }
+    }
+
+    stockfishRef.current.onmessage = onMessage
+
+    // Send position to Stockfish
+    stockfishRef.current.postMessage('position fen ' + currentGame.fen())
+    stockfishRef.current.postMessage('go movetime 500') // Think for 500ms
   }, [gameOver, checkGameStatus])
 
   // Get possible moves for a square
@@ -380,9 +433,12 @@ export default function DeepBluePage() {
 
         {/* Chess Board */}
         <div className="w-full max-w-[600px] space-y-4">
-          <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-3 text-center">
+          <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-3 text-center space-y-1">
             <p className="text-blue-300 font-mono text-sm">
               <span className="text-blue-400 font-bold">Drag</span> your pieces to move them
+            </p>
+            <p className="text-blue-400/60 font-mono text-xs">
+              Powered by Stockfish (Skill Level 10/20)
             </p>
           </div>
 
@@ -412,12 +468,19 @@ export default function DeepBluePage() {
           ) : (
             <div className="space-y-2">
               <p className="text-blue-400 font-mono text-lg">
-                {game.turn() === 'w' ? 'YOUR TURN' : 'DEEP BLUE THINKING...'}
+                {game.turn() === 'w' ? 'YOUR TURN' : (aiThinking ? 'STOCKFISH ANALYZING...' : 'DEEP BLUE THINKING...')}
               </p>
               {game.isCheck() && (
                 <p className="text-yellow-400 font-mono text-sm animate-pulse">
                   CHECK!
                 </p>
+              )}
+              {aiThinking && (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                </div>
               )}
             </div>
           )}
