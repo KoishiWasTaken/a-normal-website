@@ -204,19 +204,59 @@ export default function DeepBluePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-purple-950 relative overflow-hidden">
-      {/* Galaxy background */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute w-2 h-2 bg-white rounded-full top-[10%] left-[15%] animate-pulse" />
-        <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[20%] left-[80%]" />
-        <div className="absolute w-1 h-1 bg-purple-300 rounded-full top-[30%] left-[25%] animate-pulse" />
-        <div className="absolute w-2 h-2 bg-white rounded-full top-[40%] left-[70%]" />
-        <div className="absolute w-1 h-1 bg-blue-400 rounded-full top-[50%] left-[45%]" />
-        <div className="absolute w-1 h-1 bg-white rounded-full top-[60%] left-[90%] animate-pulse" />
-        <div className="absolute w-2 h-2 bg-purple-400 rounded-full top-[70%] left-[35%]" />
-        <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[80%] left-[60%]" />
-        <div className="absolute w-1 h-1 bg-white rounded-full top-[15%] left-[50%]" />
-        <div className="absolute w-2 h-2 bg-purple-300 rounded-full top-[85%] left-[20%] animate-pulse" />
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated Galaxy Background */}
+      <div className="absolute inset-0">
+        {/* Nebula clouds */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-96 h-96 bg-blue-600 rounded-full blur-[100px] top-[10%] left-[20%] animate-pulse" style={{ animationDuration: '8s' }} />
+          <div className="absolute w-80 h-80 bg-purple-600 rounded-full blur-[120px] top-[60%] right-[15%] animate-pulse" style={{ animationDuration: '10s' }} />
+          <div className="absolute w-64 h-64 bg-indigo-600 rounded-full blur-[80px] bottom-[20%] left-[40%] animate-pulse" style={{ animationDuration: '12s' }} />
+        </div>
+
+        {/* Twinkling stars layer 1 - small stars */}
+        <div className="absolute inset-0">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={`star-small-${i}`}
+              className="absolute bg-white rounded-full animate-pulse"
+              style={{
+                width: `${Math.random() * 2 + 1}px`,
+                height: `${Math.random() * 2 + 1}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${Math.random() * 2 + 2}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Twinkling stars layer 2 - medium stars */}
+        <div className="absolute inset-0">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={`star-med-${i}`}
+              className="absolute rounded-full animate-pulse"
+              style={{
+                width: `${Math.random() * 3 + 2}px`,
+                height: `${Math.random() * 3 + 2}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                backgroundColor: i % 3 === 0 ? '#93c5fd' : i % 3 === 1 ? '#c4b5fd' : '#ffffff',
+                animationDelay: `${Math.random() * 4}s`,
+                animationDuration: `${Math.random() * 3 + 1}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Shooting stars */}
+        <div className="absolute inset-0">
+          <div className="absolute w-1 h-1 bg-white rounded-full top-[20%] left-[10%] animate-ping" style={{ animationDuration: '3s', animationDelay: '0s' }} />
+          <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[60%] right-[20%] animate-ping" style={{ animationDuration: '4s', animationDelay: '2s' }} />
+          <div className="absolute w-1 h-1 bg-purple-300 rounded-full bottom-[30%] left-[70%] animate-ping" style={{ animationDuration: '3.5s', animationDelay: '4s' }} />
+        </div>
       </div>
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
@@ -238,9 +278,12 @@ export default function DeepBluePage() {
             position={game.fen()}
             onPieceDrop={onDrop}
             boardOrientation="white"
+            arePiecesDraggable={!gameOver && game.turn() === 'w'}
             customBoardStyle={{
               borderRadius: '0.5rem'
             }}
+            customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
+            customLightSquareStyle={{ backgroundColor: '#475569' }}
           />
         </div>
 
