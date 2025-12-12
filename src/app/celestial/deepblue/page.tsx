@@ -2,11 +2,35 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Chess } from 'chess.js'
+import { Chess, Square } from 'chess.js'
 import { Chessboard } from 'react-chessboard'
+
+// Generate static stars on mount
+const generateStars = () => {
+  const smallStars = Array.from({ length: 50 }, (_, i) => ({
+    id: `star-small-${i}`,
+    size: Math.random() * 2 + 1,
+    top: Math.random() * 100,
+    left: Math.random() * 100,
+    delay: Math.random() * 3,
+    duration: Math.random() * 2 + 2
+  }))
+
+  const mediumStars = Array.from({ length: 30 }, (_, i) => ({
+    id: `star-med-${i}`,
+    size: Math.random() * 3 + 2,
+    top: Math.random() * 100,
+    left: Math.random() * 100,
+    color: i % 3 === 0 ? '#93c5fd' : i % 3 === 1 ? '#c4b5fd' : '#ffffff',
+    delay: Math.random() * 4,
+    duration: Math.random() * 3 + 1
+  }))
+
+  return { smallStars, mediumStars }
+}
 
 export default function DeepBluePage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -15,8 +39,13 @@ export default function DeepBluePage() {
   const [timeLeft, setTimeLeft] = useState(600) // 10 minutes in seconds
   const [gameOver, setGameOver] = useState(false)
   const [gameResult, setGameResult] = useState<'win' | 'lose' | null>(null)
+  const [moveFrom, setMoveFrom] = useState<Square | null>(null)
+  const [optionSquares, setOptionSquares] = useState<Record<string, any>>({})
   const router = useRouter()
   const supabase = createClient()
+
+  // Generate stars once on mount
+  const stars = useMemo(() => generateStars(), [])
 
   // Initialize Stockfish engine
   const [stockfish, setStockfish] = useState<Worker | null>(null)
@@ -161,21 +190,95 @@ export default function DeepBluePage() {
     stockfish.addEventListener('message', handleMessage)
   }, [game, stockfish, gameOver, checkGameStatus])
 
-  // Handle player move
-  const onDrop = (sourceSquare: string, targetSquare: string, piece: string) => {
-    if (gameOver) return false
+  // Get possible moves for a square
+  const getMoveOptions = (square: Square) => {
+    const moves = game.moves({
+      square,
+      verbose: true
+    })
+
+    if (moves.length === 0) {
+      setOptionSquares({})
+      return false
+    }
+
+    const newSquares: Record<string, any> = {}
+    moves.forEach((move) => {
+      newSquares[move.to] = {
+        background: move.captured
+          ? 'radial-gradient(circle, rgba(239, 68, 68, 0.4) 85%, transparent 85%)'
+          : 'radial-gradient(circle, rgba(34, 197, 94, 0.4) 25%, transparent 25%)',
+        borderRadius: '50%'
+      }
+    })
+    newSquares[square] = {
+      background: 'rgba(59, 130, 246, 0.4)'
+    }
+    setOptionSquares(newSquares)
+    return true
+  }
+
+  // Handle square click
+  const onSquareClick = (square: Square) => {
+    if (gameOver || game.turn() !== 'w') return
+
+    // If no piece selected, select this piece
+    if (!moveFrom) {
+      const hasMoveOptions = getMoveOptions(square)
+      if (hasMoveOptions) setMoveFrom(square)
+      return
+    }
+
+    // Try to make a move
+    try {
+      const gameCopy = new Chess(game.fen())
+      const move = gameCopy.move({
+        from: moveFrom,
+        to: square,
+        promotion: 'q' // always promote to queen for simplicity
+      })
+
+      if (move === null) {
+        // Invalid move, try selecting new piece
+        const hasMoveOptions = getMoveOptions(square)
+        setMoveFrom(hasMoveOptions ? square : null)
+        return
+      }
+
+      setGame(gameCopy)
+      setMoveFrom(null)
+      setOptionSquares({})
+
+      if (checkGameStatus(gameCopy)) {
+        return
+      }
+
+      // AI's turn
+      setTimeout(() => makeAiMove(), 500)
+    } catch (error) {
+      // Invalid move, clear selection
+      setMoveFrom(null)
+      setOptionSquares({})
+    }
+  }
+
+  // Handle piece drop
+  const onDrop = (sourceSquare: string, targetSquare: string) => {
+    if (gameOver || game.turn() !== 'w') return false
 
     try {
       const gameCopy = new Chess(game.fen())
       const move = gameCopy.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: piece[1].toLowerCase() === 'p' ? 'q' : undefined
+        promotion: 'q' // always promote to queen for simplicity
       })
 
       if (move === null) return false // Illegal move
 
       setGame(gameCopy)
+      setMoveFrom(null)
+      setOptionSquares({})
 
       if (checkGameStatus(gameCopy)) {
         return true
@@ -205,6 +308,28 @@ export default function DeepBluePage() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated Gradient Background */}
+      <div className="absolute inset-0 opacity-60">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950 animate-gradient-shift" />
+      </div>
+
+      <style jsx>{`
+        @keyframes gradient-shift {
+          0%, 100% {
+            background: linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #172554 100%);
+          }
+          33% {
+            background: linear-gradient(135deg, #172554 0%, #1e1b4b 50%, #4c1d95 100%);
+          }
+          66% {
+            background: linear-gradient(135deg, #4c1d95 0%, #172554 50%, #1e1b4b 100%);
+          }
+        }
+        .animate-gradient-shift {
+          animation: gradient-shift 20s ease-in-out infinite;
+        }
+      `}</style>
+
       {/* Animated Galaxy Background */}
       <div className="absolute inset-0">
         {/* Nebula clouds */}
@@ -216,17 +341,18 @@ export default function DeepBluePage() {
 
         {/* Twinkling stars layer 1 - small stars */}
         <div className="absolute inset-0">
-          {[...Array(50)].map((_, i) => (
+          {stars.smallStars.map((star) => (
             <div
-              key={`star-small-${i}`}
+              key={star.id}
               className="absolute bg-white rounded-full animate-pulse"
               style={{
-                width: `${Math.random() * 2 + 1}px`,
-                height: `${Math.random() * 2 + 1}px`,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${Math.random() * 2 + 2}s`
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                animationDelay: `${star.delay}s`,
+                animationDuration: `${star.duration}s`,
+                boxShadow: `0 0 ${star.size * 2}px rgba(255, 255, 255, 0.8)`
               }}
             />
           ))}
@@ -234,18 +360,19 @@ export default function DeepBluePage() {
 
         {/* Twinkling stars layer 2 - medium stars */}
         <div className="absolute inset-0">
-          {[...Array(30)].map((_, i) => (
+          {stars.mediumStars.map((star) => (
             <div
-              key={`star-med-${i}`}
+              key={star.id}
               className="absolute rounded-full animate-pulse"
               style={{
-                width: `${Math.random() * 3 + 2}px`,
-                height: `${Math.random() * 3 + 2}px`,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                backgroundColor: i % 3 === 0 ? '#93c5fd' : i % 3 === 1 ? '#c4b5fd' : '#ffffff',
-                animationDelay: `${Math.random() * 4}s`,
-                animationDuration: `${Math.random() * 3 + 1}s`
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                backgroundColor: star.color,
+                animationDelay: `${star.delay}s`,
+                animationDuration: `${star.duration}s`,
+                boxShadow: `0 0 ${star.size * 3}px ${star.color}`
               }}
             />
           ))}
@@ -253,9 +380,9 @@ export default function DeepBluePage() {
 
         {/* Shooting stars */}
         <div className="absolute inset-0">
-          <div className="absolute w-1 h-1 bg-white rounded-full top-[20%] left-[10%] animate-ping" style={{ animationDuration: '3s', animationDelay: '0s' }} />
-          <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[60%] right-[20%] animate-ping" style={{ animationDuration: '4s', animationDelay: '2s' }} />
-          <div className="absolute w-1 h-1 bg-purple-300 rounded-full bottom-[30%] left-[70%] animate-ping" style={{ animationDuration: '3.5s', animationDelay: '4s' }} />
+          <div className="absolute w-1 h-1 bg-white rounded-full top-[20%] left-[10%] animate-ping" style={{ animationDuration: '3s', animationDelay: '0s', boxShadow: '0 0 8px rgba(255, 255, 255, 0.8)' }} />
+          <div className="absolute w-1 h-1 bg-blue-300 rounded-full top-[60%] right-[20%] animate-ping" style={{ animationDuration: '4s', animationDelay: '2s', boxShadow: '0 0 8px rgba(147, 197, 253, 0.8)' }} />
+          <div className="absolute w-1 h-1 bg-purple-300 rounded-full bottom-[30%] left-[70%] animate-ping" style={{ animationDuration: '3.5s', animationDelay: '4s', boxShadow: '0 0 8px rgba(196, 181, 253, 0.8)' }} />
         </div>
       </div>
 
@@ -277,6 +404,7 @@ export default function DeepBluePage() {
           <Chessboard
             position={game.fen()}
             onPieceDrop={onDrop}
+            onSquareClick={onSquareClick}
             boardOrientation="white"
             arePiecesDraggable={!gameOver && game.turn() === 'w'}
             customBoardStyle={{
@@ -284,6 +412,7 @@ export default function DeepBluePage() {
             }}
             customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
             customLightSquareStyle={{ backgroundColor: '#475569' }}
+            customSquareStyles={optionSquares}
           />
         </div>
 
