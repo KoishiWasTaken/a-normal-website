@@ -8,9 +8,20 @@ interface CustomChessboardProps {
   isDraggable: boolean
 }
 
-const pieceUnicode: { [key: string]: string } = {
-  wP: '♙', wN: '♘', wB: '♗', wR: '♖', wQ: '♕', wK: '♔',
-  bP: '♟', bN: '♞', bB: '♝', bR: '♜', bQ: '♛', bK: '♚'
+// Using Wikipedia chess piece SVG URLs (public domain)
+const pieceImages: { [key: string]: string } = {
+  wP: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+  wN: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+  wB: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+  wR: 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+  wQ: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+  wK: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+  bP: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+  bN: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+  bB: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+  bR: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+  bQ: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+  bK: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
 }
 
 export default function CustomChessboard({ position, onPieceDrop, isDraggable }: CustomChessboardProps) {
@@ -27,7 +38,6 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
       let fileIndex = 0
       for (const char of row) {
         if (isNaN(Number(char))) {
-          // It's a piece
           const rank = 8 - rankIndex
           const file = files[fileIndex]
           const square = `${file}${rank}`
@@ -36,7 +46,6 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
           board[square] = `${color}${piece}`
           fileIndex++
         } else {
-          // It's empty squares
           fileIndex += Number(char)
         }
       }
@@ -49,36 +58,51 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
   const ranks = [8, 7, 6, 5, 4, 3, 2, 1]
 
-  const handleDragStart = (e: React.DragEvent, square: string) => {
-    console.log('🔵 DRAG START:', square)
-    setDraggedFrom(square)
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, square: string) => {
+    console.log('🔵 DRAG START:', square, 'isDraggable:', isDraggable)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', square)
+    setDraggedFrom(square)
   }
 
-  const handleDragOver = (e: React.DragEvent, square: string) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, square: string) => {
     e.preventDefault()
     setDraggedOver(square)
   }
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
     setDraggedOver(null)
   }
 
-  const handleDrop = (e: React.DragEvent, targetSquare: string) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetSquare: string) => {
     e.preventDefault()
-    console.log('🎯 DROP:', { from: draggedFrom, to: targetSquare })
+    e.stopPropagation()
 
-    if (!draggedFrom) return
+    const sourceSquare = e.dataTransfer.getData('text/plain')
+    console.log('🎯 DROP:', { from: sourceSquare, to: targetSquare })
 
-    const moveSuccessful = onPieceDrop(draggedFrom, targetSquare)
-    console.log('✅ Move successful:', moveSuccessful)
+    if (!sourceSquare) {
+      console.log('❌ No source square')
+      setDraggedFrom(null)
+      setDraggedOver(null)
+      return
+    }
+
+    const moveSuccessful = onPieceDrop(sourceSquare, targetSquare)
+    console.log(moveSuccessful ? '✅ Move accepted' : '❌ Move rejected')
 
     setDraggedFrom(null)
     setDraggedOver(null)
   }
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
     console.log('🔴 DRAG END')
     setDraggedFrom(null)
     setDraggedOver(null)
@@ -95,30 +119,52 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
             const isDragSource = draggedFrom === square
             const isDragTarget = draggedOver === square
             const isPieceWhite = piece && piece[0] === 'w'
-            const canDrag = isDraggable && isPieceWhite && piece
+            const canDrag = isDraggable && isPieceWhite && !!piece
 
             return (
               <div
                 key={square}
                 className={`relative flex items-center justify-center ${
                   isLight ? 'bg-[#475569]' : 'bg-[#1e293b]'
-                } ${isDragSource ? 'opacity-50' : ''} ${
-                  isDragTarget ? 'ring-4 ring-blue-400 ring-inset' : ''
+                } ${isDragSource ? 'opacity-30' : ''} ${
+                  isDragTarget ? 'ring-4 ring-inset ring-blue-400' : ''
                 } transition-all`}
-                onDragOver={(e) => handleDragOver(e, square)}
+                onDragOver={handleDragOver}
+                onDragEnter={(e) => handleDragEnter(e, square)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, square)}
               >
                 {piece && (
                   <div
                     draggable={canDrag}
-                    onDragStart={(e) => canDrag && handleDragStart(e, square)}
+                    onDragStart={(e) => {
+                      if (!canDrag) {
+                        e.preventDefault()
+                        console.log('❌ Piece not draggable:', square)
+                        return false
+                      }
+                      handleDragStart(e, square)
+                    }}
                     onDragEnd={handleDragEnd}
-                    className={`text-5xl md:text-6xl select-none ${
-                      canDrag ? 'cursor-move hover:scale-110' : 'cursor-not-allowed'
-                    } transition-transform`}
+                    className={`w-[80%] h-[80%] flex items-center justify-center ${
+                      canDrag ? 'cursor-grab active:cursor-grabbing hover:scale-105' : 'cursor-not-allowed opacity-70'
+                    } transition-transform select-none`}
+                    style={{
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none'
+                    }}
                   >
-                    {pieceUnicode[piece]}
+                    <img
+                      src={pieceImages[piece]}
+                      alt={piece}
+                      draggable={false}
+                      className="w-full h-full object-contain pointer-events-none"
+                      style={{
+                        userSelect: 'none',
+                        WebkitUserDrag: 'none'
+                      }}
+                    />
                   </div>
                 )}
               </div>
