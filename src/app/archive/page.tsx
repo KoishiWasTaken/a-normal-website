@@ -71,6 +71,42 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   celestialinferno: 'bizarre'
 }
 
+// Subjective difficulty ordering within each difficulty level (lower = easier)
+const pageSubjectiveDifficulty: Record<string, number> = {
+  // Plain (0-99)
+  homepage: 0,
+  archive: 1,
+  profile: 2,
+  leaderboard: 3,
+  settings: 4,
+  '404': 5,
+  forbidden: 6,
+  // Atypical (100-199)
+  vault: 100,           // Hidden button on homepage
+  invertigo: 101,       // Warp gate pattern
+  radar: 102,           // Warp gate pattern
+  endoftheend: 103,     // Warp gate pattern
+  friendzone: 104,      // Friend code system
+  libraryofbabel: 105,  // Rare 404 redirect + clickable 4O4
+  '4O4': 106,           // Rare 404 redirect (0.1%)
+  // Bizarre (200-299)
+  beginningofthebeginning: 200,  // Hidden text in End of the End
+  fortheworthy: 201,              // Rare friend link on homepage
+  celestialinferno: 202,          // Library puzzle v>e>n>u>s
+  // Cryptic (300-399)
+  // Diabolical (400-499)
+  // Enigmatic (500-599)
+}
+
+const difficultyOrder: Record<DifficultyLevel, number> = {
+  plain: 0,
+  atypical: 1,
+  bizarre: 2,
+  cryptic: 3,
+  diabolical: 4,
+  enigmatic: 5
+}
+
 export default function IndexPage() {
   const [allPages, setAllPages] = useState<AllPagesEntry[]>([])
   const [selectedPage, setSelectedPage] = useState<AllPagesEntry | null>(null)
@@ -160,9 +196,12 @@ export default function IndexPage() {
         }
       })
 
-      setAllPages(enrichedPages)
+      // Sort pages by difficulty level, then subjective difficulty
+      const sortedPages = sortPagesByDifficulty(enrichedPages)
+
+      setAllPages(sortedPages)
       // Select homepage by default
-      const homepage = enrichedPages.find(p => p.page_key === 'homepage') || enrichedPages[0]
+      const homepage = sortedPages.find(p => p.page_key === 'homepage') || sortedPages[0]
       setSelectedPage(homepage)
       setLoading(false)
     }
@@ -203,6 +242,30 @@ export default function IndexPage() {
     const level = getDifficultyLevel(pageKey)
     // Hide visit link for Bizarre and harder difficulties
     return level !== 'bizarre' && level !== 'cryptic' && level !== 'diabolical' && level !== 'enigmatic'
+  }
+
+  const canShowUrl = (pageKey: string): boolean => {
+    const level = getDifficultyLevel(pageKey)
+    // Hide URL for Cryptic and harder difficulties
+    return level !== 'cryptic' && level !== 'diabolical' && level !== 'enigmatic'
+  }
+
+  const sortPagesByDifficulty = (pages: AllPagesEntry[]): AllPagesEntry[] => {
+    return [...pages].sort((a, b) => {
+      // First sort by difficulty level
+      const diffA = difficultyOrder[getDifficultyLevel(a.page_key)]
+      const diffB = difficultyOrder[getDifficultyLevel(b.page_key)]
+
+      if (diffA !== diffB) {
+        return diffA - diffB
+      }
+
+      // Then sort by subjective difficulty within same level
+      const subjA = pageSubjectiveDifficulty[a.page_key] ?? 999
+      const subjB = pageSubjectiveDifficulty[b.page_key] ?? 999
+
+      return subjA - subjB
+    })
   }
 
   return (
@@ -303,9 +366,11 @@ export default function IndexPage() {
                                 )
                               })()}
                             </div>
-                            <CardDescription className="font-mono text-xs break-all">
-                              {selectedPage.page_url}
-                            </CardDescription>
+                            {canShowUrl(selectedPage.page_key) && (
+                              <CardDescription className="font-mono text-xs break-all">
+                                {selectedPage.page_url}
+                              </CardDescription>
+                            )}
                           </div>
                           {selectedPage.can_navigate && canShowVisitLink(selectedPage.page_key) && (
                             <Link href={selectedPage.page_url} className="block sm:inline-block">
