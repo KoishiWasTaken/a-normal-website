@@ -37,6 +37,7 @@ export default function VaultPage() {
     // Define valid patterns and their destinations
     const patterns: { [key: string]: string } = {
       '1001110110111001': '/warp/invertigo',
+      '0101110100011111': '/warp/radar',
       // Add more patterns here as you create more secret pages
     }
 
