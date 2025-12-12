@@ -150,11 +150,22 @@ export default function DeepBluePage() {
     return false
   }, [handleWin, handleLoss])
 
-  // Simple but challenging AI
-  const makeAiMove = useCallback(() => {
-    if (gameOver) return
+  // Simple but challenging AI - takes current game state as parameter to avoid stale state
+  const makeAiMove = useCallback((currentGame: Chess) => {
+    console.log('🤖 AI analyzing position:', currentGame.fen())
 
-    const possibleMoves = game.moves({ verbose: true })
+    if (gameOver) {
+      console.log('❌ AI: Game is over')
+      return
+    }
+
+    if (currentGame.turn() !== 'b') {
+      console.log('❌ AI: Not black\'s turn')
+      return
+    }
+
+    const possibleMoves = currentGame.moves({ verbose: true })
+    console.log('🤖 AI found', possibleMoves.length, 'possible moves')
 
     if (possibleMoves.length === 0) return
 
@@ -173,7 +184,7 @@ export default function DeepBluePage() {
       if (centerSquares.includes(move.to)) score += 15
 
       // Checks are valuable
-      const testGame = new Chess(game.fen())
+      const testGame = new Chess(currentGame.fen())
       testGame.move(move)
       if (testGame.isCheck()) score += 25
       if (testGame.isCheckmate()) score += 10000 // Always take checkmate
@@ -191,12 +202,14 @@ export default function DeepBluePage() {
     const topMoves = scoredMoves.slice(0, 3)
     const selectedMove = topMoves[Math.floor(Math.random() * topMoves.length)].move
 
-    const gameCopy = new Chess(game.fen())
+    console.log('🤖 AI selected move:', selectedMove.san, `(${selectedMove.from}→${selectedMove.to})`)
+
+    const gameCopy = new Chess(currentGame.fen())
     gameCopy.move(selectedMove)
     setGame(gameCopy)
     setPosition(gameCopy.fen())
     checkGameStatus(gameCopy)
-  }, [game, gameOver, checkGameStatus])
+  }, [gameOver, checkGameStatus])
 
   // Get possible moves for a square
 
@@ -238,9 +251,9 @@ export default function DeepBluePage() {
         return true
       }
 
-      // Queue AI move after a short delay
-      console.log('🤖 Queuing AI move')
-      setTimeout(() => makeAiMove(), 300)
+      // Queue AI move after a short delay, passing the updated game state
+      console.log('🤖 Queuing AI move with updated position')
+      setTimeout(() => makeAiMove(gameCopy), 300)
       return true
     } catch (error) {
       console.error('💥 Move error:', error)
