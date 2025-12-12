@@ -9,18 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { AlertTriangle } from 'lucide-react'
 
-export default function NotFound() {
+export default function FourOFourPage() {
   const [tracked, setTracked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
-    // 1/1000 chance to redirect to /4O4
-    const chance = Math.random()
-    if (chance < 0.001) {
-      window.location.href = '/4O4'
-      return
-    }
-
     const trackDiscovery = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -28,7 +21,7 @@ export default function NotFound() {
         // Track page discovery
         await supabase.rpc('record_page_discovery', {
           p_user_id: user.id,
-          p_page_key: '404'
+          p_page_key: '4O4'
         })
         setTracked(true)
       }
@@ -46,9 +39,11 @@ export default function NotFound() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-5xl md:text-6xl font-mono font-bold text-foreground">
-              404
-            </h1>
+            <Link href="/library/of/babel">
+              <h1 className="text-5xl md:text-6xl font-mono font-bold text-foreground cursor-pointer">
+                4O4
+              </h1>
+            </Link>
             <h2 className="text-xl md:text-2xl font-mono text-muted-foreground">
               page not found
             </h2>
