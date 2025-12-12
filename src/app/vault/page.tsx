@@ -14,8 +14,45 @@ export default function VaultPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [tracked, setTracked] = useState(false)
+  const [grid, setGrid] = useState<boolean[][]>(
+    Array(4).fill(null).map(() => Array(4).fill(false))
+  )
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  const toggleCell = (row: number, col: number) => {
+    setGrid(prevGrid => {
+      const newGrid = prevGrid.map(r => [...r])
+      newGrid[row][col] = !newGrid[row][col]
+      return newGrid
+    })
+    setError(null)
+  }
+
+  const checkPattern = () => {
+    // Convert grid to string for pattern matching
+    const pattern = grid.map(row => row.map(cell => cell ? '1' : '0').join('')).join('')
+
+    // Define valid patterns and their destinations
+    const patterns: { [key: string]: string } = {
+      '1001110110111001': '/warp/invertigo',
+      // Add more patterns here as you create more secret pages
+    }
+
+    if (patterns[pattern]) {
+      // Valid pattern - navigate to the secret page
+      router.push(patterns[pattern])
+    } else {
+      // Invalid pattern
+      setError('invalid pattern. please try again.')
+    }
+  }
+
+  const resetGrid = () => {
+    setGrid(Array(4).fill(null).map(() => Array(4).fill(false)))
+    setError(null)
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -101,79 +138,81 @@ export default function VaultPage() {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <p className="text-sm md:text-base text-blue-100 font-mono leading-relaxed">
-                  this is the vault - a collection of things that didn't quite fit anywhere else
-                  on the site. some pages are hidden deeper than others.
+                  this is the vault - a gateway to hidden locations. the warp gate below can transport
+                  you to different parts of the site that aren't accessible through normal navigation.
                 </p>
                 <p className="text-sm md:text-base text-blue-200/80 font-mono leading-relaxed">
-                  there are more pages to discover. some are linked from here.
-                  others... you'll have to find on your own.
+                  each pattern unlocks a different destination. you'll need to figure out the right
+                  combinations. some patterns might be found through clues scattered across the site.
                 </p>
                 <p className="text-xs md:text-sm text-blue-300/50 font-mono italic">
-                  keep exploring. there's more to this website than what's on the surface.
+                  experiment. explore. there's more here than meets the eye.
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Secret Pages Grid */}
-          <div className="space-y-4">
-            <h2 className="text-2xl md:text-3xl font-mono font-bold text-blue-400">
-              hidden pages
-            </h2>
-            <p className="text-sm text-blue-300/60 font-mono">
-              0 / ??? unlocked
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Placeholder for future secret pages */}
-              <Card className="border-dashed border-blue-900/30 bg-slate-900/20">
-                <CardContent className="py-12 text-center">
-                  <Lock size={32} className="mx-auto mb-3 text-blue-400/30" />
-                  <p className="text-sm text-blue-300/40 font-mono">
-                    ???
-                  </p>
-                  <p className="text-xs text-blue-400/20 font-mono mt-2">
-                    not discovered yet
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-dashed border-blue-900/30 bg-slate-900/20">
-                <CardContent className="py-12 text-center">
-                  <Lock size={32} className="mx-auto mb-3 text-blue-400/30" />
-                  <p className="text-sm text-blue-300/40 font-mono">
-                    ???
-                  </p>
-                  <p className="text-xs text-blue-400/20 font-mono mt-2">
-                    not discovered yet
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-dashed border-blue-900/30 bg-slate-900/20">
-                <CardContent className="py-12 text-center">
-                  <Lock size={32} className="mx-auto mb-3 text-blue-400/30" />
-                  <p className="text-sm text-blue-300/40 font-mono">
-                    ???
-                  </p>
-                  <p className="text-xs text-blue-400/20 font-mono mt-2">
-                    not discovered yet
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-dashed border-blue-900/30 bg-slate-900/20">
-                <CardContent className="py-12 text-center">
-                  <Lock size={32} className="mx-auto mb-3 text-blue-400/30" />
-                  <p className="text-sm text-blue-300/40 font-mono">
-                    ???
-                  </p>
-                  <p className="text-xs text-blue-400/20 font-mono mt-2">
-                    not discovered yet
-                  </p>
-                </CardContent>
-              </Card>
+          {/* Pattern Grid */}
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-2xl md:text-3xl font-mono font-bold text-blue-400">
+                warp gate
+              </h2>
+              <p className="text-sm text-blue-300/60 font-mono">
+                configure pattern to access hidden locations
+              </p>
             </div>
+
+            <Card className="border-blue-900/50 bg-slate-900/50 backdrop-blur">
+              <CardContent className="pt-8 pb-8">
+                {/* 4x4 Grid */}
+                <div className="flex flex-col items-center gap-6">
+                  <div className="inline-grid grid-cols-4 gap-2 p-4 rounded-lg bg-slate-950/50 border border-blue-900/30">
+                    {grid.map((row, rowIndex) => (
+                      row.map((cell, colIndex) => (
+                        <button
+                          key={`${rowIndex}-${colIndex}`}
+                          onClick={() => toggleCell(rowIndex, colIndex)}
+                          className={`w-12 h-12 md:w-16 md:h-16 rounded-lg border-2 transition-all duration-200 ${
+                            cell
+                              ? 'bg-blue-400 border-blue-300 shadow-lg shadow-blue-400/50'
+                              : 'bg-black border-blue-900/50 hover:border-blue-700'
+                          }`}
+                          aria-label={`Cell ${rowIndex + 1}-${colIndex + 1}`}
+                        />
+                      ))
+                    ))}
+                  </div>
+
+                  {/* Controls */}
+                  <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+                    <Button
+                      onClick={checkPattern}
+                      className="w-full font-mono bg-blue-600 hover:bg-blue-500 text-white"
+                    >
+                      warp
+                    </Button>
+
+                    <Button
+                      onClick={resetGrid}
+                      variant="outline"
+                      className="w-full font-mono text-blue-400 border-blue-400/30 hover:bg-blue-950/50"
+                    >
+                      reset
+                    </Button>
+
+                    {/* Error Message */}
+                    {error && (
+                      <div className="w-full p-3 rounded border border-red-500/30 bg-red-950/20">
+                        <p className="text-sm text-red-400 font-mono text-center">
+                          {error}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Hint Card */}
@@ -181,11 +220,11 @@ export default function VaultPage() {
             <CardContent className="pt-6">
               <div className="space-y-3">
                 <p className="text-sm font-mono text-blue-300">
-                  hint:
+                  how it works:
                 </p>
                 <p className="text-xs md:text-sm font-mono text-blue-200/70 leading-relaxed">
-                  hidden pages can be anywhere. sometimes they're linked. sometimes you need to
-                  look at the source. sometimes you need to guess the right URL. good luck.
+                  click boxes to toggle between off (black) and on (white). different patterns unlock different locations.
+                  find the right patterns to discover what's hidden. there's no limit on attempts.
                 </p>
               </div>
             </CardContent>
