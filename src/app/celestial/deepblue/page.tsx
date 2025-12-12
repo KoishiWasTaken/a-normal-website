@@ -220,15 +220,39 @@ export default function DeepBluePage() {
 
   // Handle square click
   const onSquareClick = (square: Square) => {
-    if (gameOver || game.turn() !== 'w') return
+    alert(`Clicked square: ${square}`)
+    console.log('=== SQUARE CLICKED ===')
+    console.log('Square:', square)
+    console.log('Game over:', gameOver)
+    console.log('Turn:', game.turn())
+
+    if (gameOver) {
+      console.log('Game is over, returning')
+      return
+    }
+
+    if (game.turn() !== 'w') {
+      console.log('Not white turn, returning')
+      return
+    }
 
     // If no piece selected, try to select this piece
     if (!moveFrom) {
+      console.log('No piece selected yet')
       const piece = game.get(square)
+      console.log('Piece at square:', piece)
+
       // Only select if there's a white piece on this square
       if (piece && piece.color === 'w') {
+        console.log('White piece found, getting move options')
         const hasMoveOptions = getMoveOptions(square)
-        if (hasMoveOptions) setMoveFrom(square)
+        console.log('Has move options:', hasMoveOptions)
+        if (hasMoveOptions) {
+          setMoveFrom(square)
+          console.log('Piece selected at:', square)
+        }
+      } else {
+        console.log('No white piece at this square')
       }
       return
     }
