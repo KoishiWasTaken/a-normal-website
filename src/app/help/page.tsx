@@ -35,8 +35,7 @@ const headlines = [
 
 export default function HelpPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
-  const [currentHeadline, setCurrentHeadline] = useState('')
-  const [isTerminalHint, setIsTerminalHint] = useState(false)
+  const [headlineSequence, setHeadlineSequence] = useState<Array<{ text: string; isLink: boolean }>>([])
   const router = useRouter()
   const supabase = createClient()
 
@@ -57,27 +56,33 @@ export default function HelpPage() {
   }, [router, supabase])
 
   useEffect(() => {
-    // Pick a random headline
-    const pickRandomHeadline = () => {
-      const randomIndex = Math.floor(Math.random() * headlines.length)
-      const headline = headlines[randomIndex]
-      setCurrentHeadline(headline)
-      setIsTerminalHint(headline === "this hint actually takes you somewhere")
+    // Generate a sequence of random headlines
+    const generateSequence = () => {
+      const sequence = []
+      for (let i = 0; i < 10; i++) {
+        const randomIndex = Math.floor(Math.random() * headlines.length)
+        const headline = headlines[randomIndex]
+        sequence.push({
+          text: headline,
+          isLink: headline === "this hint actually takes you somewhere"
+        })
+      }
+      return sequence
     }
 
-    // Initial headline
-    pickRandomHeadline()
+    // Initial sequence
+    setHeadlineSequence(generateSequence())
 
-    // Change headline every 5-8 seconds
+    // Regenerate sequence every 50-80 seconds
     const interval = setInterval(() => {
-      pickRandomHeadline()
-    }, Math.random() * 3000 + 5000) // 5-8 seconds
+      setHeadlineSequence(generateSequence())
+    }, Math.random() * 30000 + 50000)
 
     return () => clearInterval(interval)
   }, [])
 
-  const handleHeadlineClick = () => {
-    if (isTerminalHint) {
+  const handleHeadlineClick = (isLink: boolean) => {
+    if (isLink) {
       router.push('/terminal')
     }
   }
@@ -86,17 +91,18 @@ export default function HelpPage() {
     <div className="min-h-screen bg-background">
       {/* Scrolling Headline */}
       <div className="w-full overflow-hidden bg-muted border-b border-border py-4">
-        <div
-          className={`whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-left ${isTerminalHint ? 'cursor-pointer' : ''}`}
-          onClick={handleHeadlineClick}
-        >
-          {/* Create large gaps by repeating with spacing */}
-          <span className="inline-block">{currentHeadline}</span>
-          <span className="inline-block px-32">•••</span>
-          <span className="inline-block">{currentHeadline}</span>
-          <span className="inline-block px-32">•••</span>
-          <span className="inline-block">{currentHeadline}</span>
-          <span className="inline-block px-32">•••</span>
+        <div className="whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-left">
+          {headlineSequence.map((item, index) => (
+            <span key={index}>
+              <span
+                className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
+                onClick={() => handleHeadlineClick(item.isLink)}
+              >
+                {item.text}
+              </span>
+              <span className="inline-block" style={{ width: '800px' }}></span>
+            </span>
+          ))}
         </div>
       </div>
 
@@ -113,12 +119,12 @@ export default function HelpPage() {
             transform: translateX(0);
           }
           100% {
-            transform: translateX(-33.333%);
+            transform: translateX(-50%);
           }
         }
 
         .animate-scroll-left {
-          animation: scroll-left 25s linear infinite;
+          animation: scroll-left 120s linear infinite;
         }
       `}</style>
     </div>
