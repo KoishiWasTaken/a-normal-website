@@ -7,34 +7,28 @@ import { createClient } from '@/lib/supabase/client'
 import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
-interface Pipe {
+interface Point {
   x: number
   y: number
-  segments: PipeSegment[]
+}
+
+interface Pipe {
+  points: Point[]
   color: string
   width: number
 }
 
-interface PipeSegment {
-  type: 'horizontal' | 'vertical' | 'corner-tl' | 'corner-tr' | 'corner-bl' | 'corner-br'
-  x: number
-  y: number
-  length: number
-}
-
 const PIPE_COLORS = [
-  '#64748b', // gray
-  '#71717a', // zinc
-  '#52525b', // neutral
-  '#57534e', // stone
-  '#78716c', // warm gray
-  '#475569', // slate
-  '#6b7280', // cool gray
+  '#52525b', // zinc-600
+  '#71717a', // zinc-500
+  '#3f3f46', // zinc-700
+  '#27272a', // zinc-800
+  '#57534e', // stone-600
+  '#78716c', // stone-500
 ]
 
-const SEGMENT_SIZE = 40
-const PIPE_WIDTH_MIN = 8
-const PIPE_WIDTH_MAX = 16
+const PIPE_WIDTH_MIN = 15
+const PIPE_WIDTH_MAX = 30
 
 export default function PipeworksPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -43,6 +37,7 @@ export default function PipeworksPage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [pipes, setPipes] = useState<Pipe[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationFrameRef = useRef<number | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -62,97 +57,55 @@ export default function PipeworksPage() {
     init()
   }, [router, supabase])
 
-  // Generate a random pipe path
+  // Generate a simple pipe with smooth path
   const generatePipe = (startX: number, startY: number): Pipe => {
-    const segments: PipeSegment[] = []
-    const segmentCount = 8 + Math.floor(Math.random() * 12) // 8-20 segments
-    let currentX = startX
-    let currentY = startY
-    let lastDirection: 'horizontal' | 'vertical' = Math.random() > 0.5 ? 'horizontal' : 'vertical'
+    const points: Point[] = []
+    const segments = 4 + Math.floor(Math.random() * 6) // 4-10 segments
 
-    for (let i = 0; i < segmentCount; i++) {
-      const length = SEGMENT_SIZE * (2 + Math.floor(Math.random() * 4)) // 2-6 units long
+    let x = startX
+    let y = startY
 
-      if (lastDirection === 'horizontal') {
-        // Add horizontal segment
-        segments.push({
-          type: 'horizontal',
-          x: currentX,
-          y: currentY,
-          length
-        })
-        currentX += length
+    points.push({ x, y })
 
-        // Add corner
-        if (i < segmentCount - 1) {
-          const goDown = Math.random() > 0.5
-          segments.push({
-            type: goDown ? 'corner-bl' : 'corner-tl',
-            x: currentX,
-            y: currentY,
-            length: SEGMENT_SIZE
-          })
-          currentY += goDown ? SEGMENT_SIZE : -SEGMENT_SIZE
-          lastDirection = 'vertical'
-        }
-      } else {
-        // Add vertical segment
-        segments.push({
-          type: 'vertical',
-          x: currentX,
-          y: currentY,
-          length
-        })
-        currentY += length
+    for (let i = 0; i < segments; i++) {
+      // Random direction and length
+      const angle = Math.random() * Math.PI * 2
+      const length = 80 + Math.random() * 120
 
-        // Add corner
-        if (i < segmentCount - 1) {
-          const goRight = Math.random() > 0.5
-          segments.push({
-            type: goRight ? 'corner-tr' : 'corner-tl',
-            x: currentX,
-            y: currentY,
-            length: SEGMENT_SIZE
-          })
-          currentX += goRight ? SEGMENT_SIZE : -SEGMENT_SIZE
-          lastDirection = 'horizontal'
-        }
-      }
+      x += Math.cos(angle) * length
+      y += Math.sin(angle) * length
+
+      points.push({ x, y })
     }
 
     return {
-      x: startX,
-      y: startY,
-      segments,
+      points,
       color: PIPE_COLORS[Math.floor(Math.random() * PIPE_COLORS.length)],
       width: PIPE_WIDTH_MIN + Math.floor(Math.random() * (PIPE_WIDTH_MAX - PIPE_WIDTH_MIN))
     }
   }
 
-  // Generate pipes for a grid region
-  const generatePipesForRegion = (centerX: number, centerY: number, width: number, height: number): Pipe[] => {
-    const newPipes: Pipe[] = []
-    const pipeCount = 40 // Dense packing
+  // Generate initial pipes centered around viewport
+  useEffect(() => {
+    if (!canvasRef.current) return
+
+    const canvas = canvasRef.current
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+
+    const initialPipes: Pipe[] = []
+    const pipeCount = 50
 
     for (let i = 0; i < pipeCount; i++) {
-      const startX = centerX - width / 2 + Math.random() * width
-      const startY = centerY - height / 2 + Math.random() * height
-      newPipes.push(generatePipe(startX, startY))
+      const startX = centerX + (Math.random() - 0.5) * 1600
+      const startY = centerY + (Math.random() - 0.5) * 1200
+      initialPipes.push(generatePipe(startX, startY))
     }
 
-    return newPipes
-  }
-
-  // Initialize pipes on mount
-  useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current
-      const initialPipes = generatePipesForRegion(0, 0, canvas.width * 3, canvas.height * 3)
-      setPipes(initialPipes)
-    }
+    setPipes(initialPipes)
   }, [])
 
-  // Draw pipes on canvas
+  // Draw loop
   useEffect(() => {
     if (!canvasRef.current) return
 
@@ -160,65 +113,122 @@ export default function PipeworksPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Set canvas size
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const draw = () => {
+      // Resize canvas to window
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
 
-    // Clear canvas
-    ctx.fillStyle = '#1a1a1a'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+      // Clear with dark background
+      ctx.fillStyle = '#0a0a0a'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Draw all pipes
-    pipes.forEach(pipe => {
-      ctx.strokeStyle = pipe.color
-      ctx.lineWidth = pipe.width
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
+      // Draw all pipes
+      pipes.forEach(pipe => {
+        if (pipe.points.length < 2) return
 
-      pipe.segments.forEach(segment => {
-        const screenX = segment.x + offset.x + canvas.width / 2
-        const screenY = segment.y + offset.y + canvas.height / 2
+        // Transform points to screen space
+        const screenPoints = pipe.points.map(p => ({
+          x: p.x + offset.x,
+          y: p.y + offset.y
+        }))
 
+        // Check if pipe is visible (simple bounds check)
+        const visible = screenPoints.some(p =>
+          p.x >= -200 && p.x <= canvas.width + 200 &&
+          p.y >= -200 && p.y <= canvas.height + 200
+        )
+
+        if (!visible) return
+
+        // Draw pipe shadow
+        ctx.strokeStyle = '#00000060'
+        ctx.lineWidth = pipe.width + 6
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
         ctx.beginPath()
-
-        switch (segment.type) {
-          case 'horizontal':
-            ctx.moveTo(screenX, screenY)
-            ctx.lineTo(screenX + segment.length, screenY)
-            break
-          case 'vertical':
-            ctx.moveTo(screenX, screenY)
-            ctx.lineTo(screenX, screenY + segment.length)
-            break
-          case 'corner-tl':
-            // Top-left to bottom-right corner
-            ctx.arc(screenX + segment.length, screenY, segment.length, Math.PI, Math.PI * 1.5)
-            break
-          case 'corner-tr':
-            // Top-right to bottom-left corner
-            ctx.arc(screenX, screenY, segment.length, 0, Math.PI * 0.5)
-            break
-          case 'corner-bl':
-            // Bottom-left to top-right corner
-            ctx.arc(screenX + segment.length, screenY, segment.length, Math.PI * 0.5, Math.PI)
-            break
-          case 'corner-br':
-            // Bottom-right to top-left corner
-            ctx.arc(screenX, screenY, segment.length, Math.PI * 1.5, Math.PI * 2)
-            break
+        ctx.moveTo(screenPoints[0].x + 3, screenPoints[0].y + 3)
+        for (let i = 1; i < screenPoints.length; i++) {
+          ctx.lineTo(screenPoints[i].x + 3, screenPoints[i].y + 3)
         }
-
         ctx.stroke()
-      })
-    })
 
-    // Generate more pipes when user drags far enough
-    const maxDistance = Math.max(Math.abs(offset.x), Math.abs(offset.y))
-    if (maxDistance > canvas.width && pipes.length < 200) {
-      const newPipes = generatePipesForRegion(offset.x, offset.y, canvas.width * 2, canvas.height * 2)
+        // Draw main pipe
+        ctx.strokeStyle = pipe.color
+        ctx.lineWidth = pipe.width
+        ctx.beginPath()
+        ctx.moveTo(screenPoints[0].x, screenPoints[0].y)
+        for (let i = 1; i < screenPoints.length; i++) {
+          ctx.lineTo(screenPoints[i].x, screenPoints[i].y)
+        }
+        ctx.stroke()
+
+        // Draw highlight
+        ctx.strokeStyle = '#ffffff15'
+        ctx.lineWidth = pipe.width * 0.4
+        ctx.beginPath()
+        ctx.moveTo(screenPoints[0].x, screenPoints[0].y - pipe.width / 3)
+        for (let i = 1; i < screenPoints.length; i++) {
+          ctx.lineTo(screenPoints[i].x, screenPoints[i].y - pipe.width / 3)
+        }
+        ctx.stroke()
+
+        // Draw joints at each point
+        screenPoints.forEach((point, i) => {
+          // Joint shadow
+          ctx.fillStyle = '#00000060'
+          ctx.beginPath()
+          ctx.arc(point.x + 2, point.y + 2, pipe.width * 0.65, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Joint body
+          ctx.fillStyle = pipe.color
+          ctx.beginPath()
+          ctx.arc(point.x, point.y, pipe.width * 0.65, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Joint highlight
+          ctx.fillStyle = '#ffffff20'
+          ctx.beginPath()
+          ctx.arc(point.x - pipe.width * 0.2, point.y - pipe.width * 0.2, pipe.width * 0.25, 0, Math.PI * 2)
+          ctx.fill()
+        })
+      })
+
+      animationFrameRef.current = requestAnimationFrame(draw)
+    }
+
+    draw()
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
+  }, [pipes, offset])
+
+  // Generate more pipes when dragging far
+  useEffect(() => {
+    if (!canvasRef.current || pipes.length === 0) return
+
+    const canvas = canvasRef.current
+    const distance = Math.sqrt(offset.x * offset.x + offset.y * offset.y)
+
+    // Generate more pipes if dragged more than 800px and have less than 200 pipes
+    if (distance > 800 && pipes.length < 200) {
+      const newPipes: Pipe[] = []
+      const pipeCount = 20
+
+      for (let i = 0; i < pipeCount; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const dist = 600 + Math.random() * 400
+        const startX = canvas.width / 2 - offset.x + Math.cos(angle) * dist
+        const startY = canvas.height / 2 - offset.y + Math.sin(angle) * dist
+        newPipes.push(generatePipe(startX, startY))
+      }
+
       setPipes(prev => [...prev, ...newPipes])
     }
-  }, [offset, pipes])
+  }, [offset, pipes.length])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
@@ -261,7 +271,7 @@ export default function PipeworksPage() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#1a1a1a]" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
+    <div className="fixed inset-0 overflow-hidden bg-[#0a0a0a]" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
       <canvas
         ref={canvasRef}
         onMouseDown={handleMouseDown}
