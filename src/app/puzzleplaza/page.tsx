@@ -146,54 +146,85 @@ export default function PuzzlePlazaPage() {
     return null
   }
 
-  // Initialize flow puzzle - simple and reliable generation
+  // Initialize flow puzzle - uses preset valid puzzles
   const initFlowPuzzle = (level: number) => {
-    const size = level === 1 ? 4 : level === 2 ? 6 : 8
-    const pairCount = level === 1 ? 3 : level === 2 ? 4 : 5 // 3 colors, 4 colors, 5 colors
+    // Define grid sizes for each level
+    const size = level === 1 ? 6 : level === 2 ? 8 : 10
 
-    // Define color palette
-    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316']
+    // Define color palette (color ID 1-9)
+    const colors = [
+      '#ef4444', // 1: red
+      '#3b82f6', // 2: blue
+      '#22c55e', // 3: green
+      '#eab308', // 4: yellow
+      '#a855f7', // 5: purple
+      '#ec4899', // 6: pink
+      '#f97316', // 7: orange
+      '#06b6d4', // 8: cyan
+      '#84cc16'  // 9: lime
+    ]
 
-    // Create fresh empty board
+    // Preset valid puzzles for each level
+    const presetPuzzles = {
+      1: [ // 6x6 grids
+        '000002000000031000000403040215000500',
+        '000503000405001300000000000410000000',
+        '000002000000031000200400400510500300'
+      ],
+      2: [ // 8x8 grids
+        '5300000100000020000030000000040000200504001006000000006000000000',
+        '0000000000640050003010000000000300000200000000200600004500000001',
+        '0000000200000350030000000002000000400000006040100010000000050006'
+      ],
+      3: [ // 10x10 grids
+        '0000000000000000000000000003000630000060020004805000000700000018700000000000000904020000050900000001',
+        '9000000002010000000400000001000080370000037000005000000000000000000600000520000009060000000800000004',
+        '0000000001300000000600900000100000000000005009040000000000060400000800000202005080000000707020000000'
+      ]
+    }
+
+    // Randomly select a puzzle from the pool
+    const puzzlePool = presetPuzzles[level as 1 | 2 | 3]
+    const selectedPuzzle = puzzlePool[Math.floor(Math.random() * puzzlePool.length)]
+
+    // Create board from puzzle string
     const board: FlowCell[][] = Array(size).fill(null).map(() =>
       Array(size).fill(null).map(() => ({ color: null, isNode: false }))
     )
 
     const nodes: FlowNode[] = []
-    const usedCells = new Set<string>()
+    const colorNodeMap = new Map<number, FlowNode[]>() // Track nodes by color ID
 
-    // Place exactly pairCount pairs (each pair = 2 nodes of same color)
-    for (let pairId = 0; pairId < pairCount; pairId++) {
-      const color = colors[pairId] // Use pairId to ensure unique color per pair
+    // Parse puzzle string and place nodes
+    for (let i = 0; i < selectedPuzzle.length; i++) {
+      const char = selectedPuzzle[i]
+      const row = Math.floor(i / size)
+      const col = i % size
 
-      // Find first node position
-      let startRow, startCol
-      do {
-        startRow = Math.floor(Math.random() * size)
-        startCol = Math.floor(Math.random() * size)
-      } while (usedCells.has(`${startRow},${startCol}`))
+      if (char !== '0') {
+        // This is a node
+        const colorId = parseInt(char) - 1 // Convert 1-9 to 0-8 for array index
+        const pairId = colorId // Use color ID as pair ID
+        const color = colors[colorId]
 
-      // Find second node position
-      let endRow, endCol
-      do {
-        endRow = Math.floor(Math.random() * size)
-        endCol = Math.floor(Math.random() * size)
-      } while (
-        usedCells.has(`${endRow},${endCol}`) ||
-        (startRow === endRow && startCol === endCol)
-      )
+        // Place node on board
+        board[row][col] = {
+          color: null,
+          isNode: true,
+          nodeColor: color,
+          pairId
+        }
 
-      // Mark positions as used
-      usedCells.add(`${startRow},${startCol}`)
-      usedCells.add(`${endRow},${endCol}`)
+        // Add to nodes array
+        const node = { row, col, color, pairId }
+        nodes.push(node)
 
-      // Place nodes on board
-      board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
-      board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
-
-      // Add exactly 2 nodes to array for this pair
-      nodes.push({ row: startRow, col: startCol, color, pairId })
-      nodes.push({ row: endRow, col: endCol, color, pairId })
+        // Track nodes by color for pair validation
+        if (!colorNodeMap.has(colorId)) {
+          colorNodeMap.set(colorId, [])
+        }
+        colorNodeMap.get(colorId)!.push(node)
+      }
     }
 
     // Set state with clean data
@@ -365,7 +396,11 @@ export default function PuzzlePlazaPage() {
 
   const checkFlowComplete = (board: FlowCell[][], connections: Map<number, FlowConnection>) => {
     const size = board.length
-    const pairCount = flowLevel === 1 ? 3 : flowLevel === 2 ? 4 : 5
+
+    // Count unique pair IDs from nodes on the board
+    const uniquePairIds = new Set<number>()
+    flowNodes.forEach(node => uniquePairIds.add(node.pairId))
+    const pairCount = uniquePairIds.size
 
     // Check all pairs are connected
     if (connections.size !== pairCount) return
