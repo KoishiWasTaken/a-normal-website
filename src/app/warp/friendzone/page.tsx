@@ -80,6 +80,24 @@ export default function FriendzPage() {
     setSuccess(null)
 
     try {
+      // Check if user is already authenticated (prevent using multiple codes)
+      const { data: existingAuth } = await supabase
+        .from('friend_authentications')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('friendzone_verified')
+        .eq('id', user.id)
+        .single()
+
+      if (existingAuth || existingProfile?.friendzone_verified === true) {
+        setError('You are already verified. You cannot use another friend code.')
+        return
+      }
+
       // Check if the code exists and is not used
       const { data: codeData, error: codeError } = await supabase
         .from('friend_codes')
