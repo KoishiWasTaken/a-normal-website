@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import MobileNav from '@/components/MobileNav'
@@ -41,11 +42,8 @@ export default function HomePage() {
       setLoading(false)
 
       if (user) {
-        // Record homepage discovery
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'homepage'
-        })
+        // Record homepage discovery with retry logic
+        await recordPageDiscovery(supabase, user.id, 'homepage')
       }
     }
 
