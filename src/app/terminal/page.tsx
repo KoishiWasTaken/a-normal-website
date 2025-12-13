@@ -49,7 +49,7 @@ export default function TerminalPage() {
     }
   }, [lines])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!currentInput.trim()) return
@@ -60,10 +60,32 @@ export default function TerminalPage() {
       { type: 'input', content: currentInput }
     ]
 
-    // Process command - currently no valid commands
-    const validCommands: string[] = []
+    // Process command
+    const command = currentInput.trim()
 
-    if (!validCommands.includes(currentInput.trim().toLowerCase())) {
+    // Data recovery command
+    if (command === 'tar -xvpzf /backup/page.tsx -C /src/app/zlepuzazapl') {
+      if (user) {
+        // Check if already recovered
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('data_recovered')
+          .eq('user_id', user.id)
+          .single()
+
+        if (profile?.data_recovered) {
+          newLines.push({ type: 'output', content: 'Data has already been recovered.' })
+        } else {
+          // Set data_recovered to true
+          await supabase
+            .from('profiles')
+            .update({ data_recovered: true })
+            .eq('user_id', user.id)
+
+          newLines.push({ type: 'output', content: 'Data successfully recovered.' })
+        }
+      }
+    } else {
       newLines.push({ type: 'output', content: 'input unrecognized.' })
     }
 
