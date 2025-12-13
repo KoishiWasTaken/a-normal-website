@@ -146,138 +146,35 @@ export default function PuzzlePlazaPage() {
     return null
   }
 
-  // Initialize flow puzzle with guaranteed solvable configuration and full coverage
+  // Initialize flow puzzle - simple and reliable generation
   const initFlowPuzzle = (level: number) => {
     const size = level === 1 ? 4 : level === 2 ? 6 : 8
     const pairCount = level === 1 ? 3 : level === 2 ? 4 : 5 // 3 colors, 4 colors, 5 colors
 
-    // Create empty board
+    // Define color palette
+    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316']
+
+    // Create fresh empty board
     const board: FlowCell[][] = Array(size).fill(null).map(() =>
       Array(size).fill(null).map(() => ({ color: null, isNode: false }))
     )
 
-    // Define color palette
-    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316']
-
-    // Generate solvable puzzle - try multiple times to ensure all tiles can be covered
-    let attempts = 0
-    const maxAttempts = 100
-
-    while (attempts < maxAttempts) {
-      attempts++
-
-      // Reset board
-      for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-          board[i][j] = { color: null, isNode: false }
-        }
-      }
-
-      const nodes: FlowNode[] = []
-      const usedCells = new Set<string>()
-      const paths: {row: number, col: number}[][] = []
-
-      // Try to place all pairs with paths that together cover all cells
-      let pairsPlaced = 0
-      const totalCells = size * size
-      const nodeCells = pairCount * 2 // Each pair has 2 nodes
-      const pathCells = totalCells - nodeCells // Cells that need to be filled by paths
-      let cellsFilled = 0
-
-      for (let pairId = 0; pairId < pairCount; pairId++) {
-        const color = colors[pairId]
-
-        // Find two unused positions
-        let startRow, startCol, endRow, endCol
-        let foundValidPair = false
-        let pairAttempts = 0
-
-        while (!foundValidPair && pairAttempts < 50) {
-          pairAttempts++
-
-          // Pick random positions
-          do {
-            startRow = Math.floor(Math.random() * size)
-            startCol = Math.floor(Math.random() * size)
-          } while (usedCells.has(`${startRow},${startCol}`))
-
-          do {
-            endRow = Math.floor(Math.random() * size)
-            endCol = Math.floor(Math.random() * size)
-          } while (
-            usedCells.has(`${endRow},${endCol}`) ||
-            (startRow === endRow && startCol === endCol)
-          )
-
-          // Try to find a path
-          const path = findPath(
-            {row: startRow, col: startCol},
-            {row: endRow, col: endCol},
-            usedCells,
-            size
-          )
-
-          // For last few pairs, prefer longer paths to fill remaining cells
-          const pathOnlyCells = path ? path.length - 2 : 0 // Exclude the 2 nodes from path length
-          const remainingPathCells = pathCells - cellsFilled - pathOnlyCells
-          const remainingPairs = pairCount - pairId - 1
-
-          if (path && path.length >= 2) {
-            // Check if this path length is reasonable for coverage
-            // Make sure remaining pairs can still fill remaining cells
-            if (remainingPairs === 0 || remainingPathCells >= remainingPairs) {
-              foundValidPair = true
-
-              // Mark all path cells as used
-              for (const pos of path) {
-                usedCells.add(`${pos.row},${pos.col}`)
-              }
-
-              paths.push(path)
-              cellsFilled += pathOnlyCells // Only count path cells, not nodes
-
-              // Place nodes
-              board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
-              board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
-
-              nodes.push({ row: startRow, col: startCol, color, pairId })
-              nodes.push({ row: endRow, col: endCol, color, pairId })
-
-              pairsPlaced++
-            }
-          }
-        }
-
-        if (!foundValidPair) {
-          // Failed to place this pair, restart
-          break
-        }
-      }
-
-      // Check if we successfully placed all pairs and filled all path cells
-      if (pairsPlaced === pairCount && cellsFilled === pathCells) {
-        setFlowBoard(board)
-        setFlowNodes(nodes)
-        setFlowConnections(new Map())
-        setCurrentDrag(null)
-        return
-      }
-    }
-
-    // Fallback: if we couldn't generate a perfect puzzle, use simpler placement
-    // This ensures the puzzle always loads even if perfect generation fails
     const nodes: FlowNode[] = []
     const usedCells = new Set<string>()
 
+    // Place exactly pairCount pairs (each pair = 2 nodes of same color)
     for (let pairId = 0; pairId < pairCount; pairId++) {
-      const color = colors[pairId]
+      const color = colors[pairId] // Use pairId to ensure unique color per pair
 
-      let startRow, startCol, endRow, endCol
+      // Find first node position
+      let startRow, startCol
       do {
         startRow = Math.floor(Math.random() * size)
         startCol = Math.floor(Math.random() * size)
       } while (usedCells.has(`${startRow},${startCol}`))
 
+      // Find second node position
+      let endRow, endCol
       do {
         endRow = Math.floor(Math.random() * size)
         endCol = Math.floor(Math.random() * size)
@@ -286,16 +183,20 @@ export default function PuzzlePlazaPage() {
         (startRow === endRow && startCol === endCol)
       )
 
+      // Mark positions as used
       usedCells.add(`${startRow},${startCol}`)
       usedCells.add(`${endRow},${endCol}`)
 
+      // Place nodes on board
       board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
       board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
 
+      // Add exactly 2 nodes to array for this pair
       nodes.push({ row: startRow, col: startCol, color, pairId })
       nodes.push({ row: endRow, col: endCol, color, pairId })
     }
 
+    // Set state with clean data
     setFlowBoard(board)
     setFlowNodes(nodes)
     setFlowConnections(new Map())
@@ -487,7 +388,7 @@ export default function PuzzlePlazaPage() {
     setTimeout(() => {
       if (flowLevel < 3) {
         setFlowLevel(flowLevel + 1)
-        initFlowPuzzle(flowLevel + 1)
+        // Don't call initFlowPuzzle here - useEffect will handle it
       } else {
         if (user) {
           savePuzzleProgress('flow', true)
@@ -519,7 +420,7 @@ export default function PuzzlePlazaPage() {
       setTimeout(() => {
         if (lightingLevel < 3) {
           setLightingLevel(lightingLevel + 1)
-          initLightingPuzzle(lightingLevel + 1)
+          // Don't call initLightingPuzzle here - useEffect will handle it
         } else {
           // Level 3 complete - unlock advance button
           if (user) {
@@ -559,7 +460,7 @@ export default function PuzzlePlazaPage() {
       setTimeout(() => {
         if (slidingLevel < 3) {
           setSlidingLevel(slidingLevel + 1)
-          initSlidingPuzzle(slidingLevel + 1)
+          // Don't call initSlidingPuzzle here - useEffect will handle it
         } else {
           // Level 3 complete - unlock advance button
           if (user) {
