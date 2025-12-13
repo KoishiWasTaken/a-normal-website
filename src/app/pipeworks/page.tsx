@@ -80,7 +80,7 @@ export default function PipeworksPage() {
     return x - Math.floor(x)
   }
 
-  // Generate a grid-aligned pipe that connects edge to edge
+  // Generate a grid-aligned pipe that extends across chunks
   const generatePipe = (chunkX: number, chunkY: number, pipeIndex: number): Pipe => {
     const seed = chunkX * 1000 + chunkY * 100 + pipeIndex
     const segments: PipeSegment[] = []
@@ -89,151 +89,116 @@ export default function PipeworksPage() {
     const chunkBaseX = chunkX * CHUNK_SIZE
     const chunkBaseY = chunkY * CHUNK_SIZE
 
-    // Pipe starts at a random edge point
-    const startEdge = Math.floor(seededRandom(seed) * 4) // 0=top, 1=right, 2=bottom, 3=left
-    const startOffset = Math.floor(seededRandom(seed + 1) * (CHUNK_SIZE / GRID_SIZE)) * GRID_SIZE
+    // Start at a random position within chunk
+    const startGridX = Math.floor(seededRandom(seed) * (CHUNK_SIZE / GRID_SIZE))
+    const startGridY = Math.floor(seededRandom(seed + 1) * (CHUNK_SIZE / GRID_SIZE))
 
-    // Pick an exit edge (must be different from start edge)
-    let exitEdge = Math.floor(seededRandom(seed + 200) * 3)
-    if (exitEdge >= startEdge) exitEdge++ // Skip the start edge
-    const exitOffset = Math.floor(seededRandom(seed + 201) * (CHUNK_SIZE / GRID_SIZE)) * GRID_SIZE
+    let currentX = chunkBaseX + startGridX * GRID_SIZE
+    let currentY = chunkBaseY + startGridY * GRID_SIZE
 
-    let currentX: number, currentY: number
-    let targetX: number, targetY: number
+    // Random initial direction
+    const initialDir = Math.floor(seededRandom(seed + 2) * 4)
     let direction: 'up' | 'down' | 'left' | 'right'
-
-    // Set start position and initial direction
-    switch (startEdge) {
-      case 0: // top
-        currentX = chunkBaseX + startOffset
-        currentY = chunkBaseY
-        direction = 'down'
-        break
-      case 1: // right
-        currentX = chunkBaseX + CHUNK_SIZE
-        currentY = chunkBaseY + startOffset
-        direction = 'left'
-        break
-      case 2: // bottom
-        currentX = chunkBaseX + startOffset
-        currentY = chunkBaseY + CHUNK_SIZE
-        direction = 'up'
-        break
-      default: // left
-        currentX = chunkBaseX
-        currentY = chunkBaseY + startOffset
-        direction = 'right'
+    switch (initialDir) {
+      case 0: direction = 'up'; break
+      case 1: direction = 'right'; break
+      case 2: direction = 'down'; break
+      default: direction = 'left'
     }
 
-    // Set target exit position
-    switch (exitEdge) {
-      case 0: // top
-        targetX = chunkBaseX + exitOffset
-        targetY = chunkBaseY
-        break
-      case 1: // right
-        targetX = chunkBaseX + CHUNK_SIZE
-        targetY = chunkBaseY + exitOffset
-        break
-      case 2: // bottom
-        targetX = chunkBaseX + exitOffset
-        targetY = chunkBaseY + CHUNK_SIZE
-        break
-      default: // left
-        targetX = chunkBaseX
-        targetY = chunkBaseY + exitOffset
-    }
+    // Create a long pipe with 8-15 segments
+    const pathLength = 8 + Math.floor(seededRandom(seed + 3) * 8)
 
-    // Navigate from start to target using grid-aligned segments
-    const maxSegments = 15
-    let segmentCount = 0
-
-    while ((currentX !== targetX || currentY !== targetY) && segmentCount < maxSegments) {
+    for (let i = 0; i < pathLength; i++) {
       const startX = currentX
       const startY = currentY
 
-      // Decide whether to move horizontally or vertically toward target
-      const needsHorizontal = currentX !== targetX
-      const needsVertical = currentY !== targetY
+      // Segment length: 2-5 grid units
+      const segmentLength = GRID_SIZE * (2 + Math.floor(seededRandom(seed + i * 3 + 4) * 4))
 
-      let moveHorizontal = false
-      if (needsHorizontal && needsVertical) {
-        // Randomly choose, but prefer current direction if it helps
-        const randChoice = seededRandom(seed + segmentCount * 10)
-        if (direction === 'left' || direction === 'right') {
-          moveHorizontal = randChoice < 0.7 // Prefer to continue in same axis
-        } else {
-          moveHorizontal = randChoice < 0.3 // Prefer to turn
-        }
-      } else {
-        moveHorizontal = needsHorizontal
-      }
-
-      // Calculate segment length (move partway toward target)
-      let segmentLength: number
-      if (moveHorizontal) {
-        const distToTarget = Math.abs(targetX - currentX)
-        const maxMove = Math.min(distToTarget, GRID_SIZE * 3)
-        segmentLength = GRID_SIZE + Math.floor(seededRandom(seed + segmentCount * 11) * (maxMove / GRID_SIZE - 1)) * GRID_SIZE
-        segmentLength = Math.min(segmentLength, distToTarget)
-
-        if (targetX > currentX) {
-          direction = 'right'
-          currentX += segmentLength
-        } else {
-          direction = 'left'
-          currentX -= segmentLength
-        }
-        segments.push({ start: { x: startX, y: startY }, end: { x: currentX, y: currentY }, type: 'horizontal' })
-      } else {
-        const distToTarget = Math.abs(targetY - currentY)
-        const maxMove = Math.min(distToTarget, GRID_SIZE * 3)
-        segmentLength = GRID_SIZE + Math.floor(seededRandom(seed + segmentCount * 11) * (maxMove / GRID_SIZE - 1)) * GRID_SIZE
-        segmentLength = Math.min(segmentLength, distToTarget)
-
-        if (targetY > currentY) {
-          direction = 'down'
-          currentY += segmentLength
-        } else {
-          direction = 'up'
+      // Move in current direction
+      switch (direction) {
+        case 'up':
           currentY -= segmentLength
-        }
-        segments.push({ start: { x: startX, y: startY }, end: { x: currentX, y: currentY }, type: 'vertical' })
+          segments.push({ start: { x: startX, y: startY }, end: { x: currentX, y: currentY }, type: 'vertical' })
+          break
+        case 'down':
+          currentY += segmentLength
+          segments.push({ start: { x: startX, y: startY }, end: { x: currentX, y: currentY }, type: 'vertical' })
+          break
+        case 'left':
+          currentX -= segmentLength
+          segments.push({ start: { x: startX, y: startY }, end: { x: currentX, y: currentY }, type: 'horizontal' })
+          break
+        case 'right':
+          currentX += segmentLength
+          segments.push({ start: { x: startX, y: startY }, end: { x: currentX, y: currentY }, type: 'horizontal' })
+          break
       }
 
-      // Add joint if not at target yet
-      if (currentX !== targetX || currentY !== targetY) {
-        // Randomly pick a joint type
-        const jointRand = seededRandom(seed + segmentCount * 12)
+      // Add joint if not last segment
+      if (i < pathLength - 1) {
+        // Pick joint type
+        const jointRand = seededRandom(seed + i * 3 + 5)
         let jointType: PipeJoint['type']
 
-        if (jointRand < 0.05) {
+        if (jointRand < 0.08) {
           jointType = 'valve'
         } else if (jointRand < 0.15) {
           jointType = 't-joint'
-        } else if (jointRand < 0.2) {
+        } else if (jointRand < 0.18) {
           jointType = 'cross'
-        } else if (jointRand < 0.5) {
+        } else if (jointRand < 0.55) {
           jointType = 'elbow'
         } else {
           jointType = 'straight'
         }
 
-        // Calculate rotation based on current direction
+        // Determine next direction
+        const turnRand = seededRandom(seed + i * 3 + 6)
+        let nextDirection = direction
+
+        if (jointType === 'elbow') {
+          // Must turn 90 degrees
+          if (direction === 'up' || direction === 'down') {
+            nextDirection = turnRand < 0.5 ? 'left' : 'right'
+          } else {
+            nextDirection = turnRand < 0.5 ? 'up' : 'down'
+          }
+        } else if (jointType === 't-joint' || jointType === 'cross') {
+          // Can turn or continue
+          const options: Array<'up' | 'down' | 'left' | 'right'> = ['up', 'down', 'left', 'right']
+          nextDirection = options[Math.floor(turnRand * 4)]
+        }
+
+        // Calculate rotation based on incoming and outgoing direction for elbow
         let rotation = 0
-        if (direction === 'right') rotation = 0
-        else if (direction === 'down') rotation = 90
-        else if (direction === 'left') rotation = 180
-        else rotation = 270
+        if (jointType === 'elbow') {
+          // Rotation depends on the turn direction
+          if (direction === 'right' && nextDirection === 'down') rotation = 0
+          else if (direction === 'down' && nextDirection === 'left') rotation = 90
+          else if (direction === 'left' && nextDirection === 'up') rotation = 180
+          else if (direction === 'up' && nextDirection === 'right') rotation = 270
+          else if (direction === 'right' && nextDirection === 'up') rotation = 270
+          else if (direction === 'up' && nextDirection === 'left') rotation = 180
+          else if (direction === 'left' && nextDirection === 'down') rotation = 90
+          else rotation = 0
+        } else {
+          // For other joints, rotation based on current direction
+          if (direction === 'right') rotation = 0
+          else if (direction === 'down') rotation = 90
+          else if (direction === 'left') rotation = 180
+          else rotation = 270
+        }
 
         joints.push({
           pos: { x: currentX, y: currentY },
           type: jointType,
           rotation
         })
-      }
 
-      segmentCount++
+        direction = nextDirection
+      }
     }
 
     return {
@@ -323,24 +288,47 @@ export default function PipeworksPage() {
 
     switch (joint.type) {
       case 'elbow':
-        // 90-degree elbow
+        // 90-degree elbow - always draw in standard orientation then rotate
+        // Draw shadow
         ctx.strokeStyle = '#00000060'
         ctx.lineWidth = width + 6
         ctx.lineCap = 'round'
         ctx.beginPath()
-        ctx.arc(0, 0, radius + 3, Math.PI, Math.PI * 1.5)
+        ctx.moveTo(-radius - 3, 0)
+        ctx.lineTo(0, 0)
+        ctx.lineTo(0, radius + 3)
         ctx.stroke()
 
+        // Draw main elbow pipe
         ctx.strokeStyle = color
         ctx.lineWidth = width
         ctx.beginPath()
-        ctx.arc(0, 0, radius, Math.PI, Math.PI * 1.5)
+        ctx.moveTo(-radius, 0)
+        ctx.lineTo(0, 0)
+        ctx.lineTo(0, radius)
         ctx.stroke()
 
-        // Flange
+        // Corner joint
+        ctx.fillStyle = '#00000060'
+        ctx.beginPath()
+        ctx.arc(2, 2, width * 0.6, 0, Math.PI * 2)
+        ctx.fill()
+
         ctx.fillStyle = color
-        ctx.fillRect(-radius * 1.3, -radius * 0.3, radius * 0.4, radius * 0.6)
-        ctx.fillRect(-radius * 0.3, -radius * 1.3, radius * 0.6, radius * 0.4)
+        ctx.beginPath()
+        ctx.arc(0, 0, width * 0.6, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Flanges at ends
+        ctx.fillStyle = color
+        ctx.fillRect(-radius * 1.1, -width * 0.4, width * 0.3, width * 0.8)
+        ctx.fillRect(-width * 0.4, radius * 0.8, width * 0.8, width * 0.3)
+
+        // Highlight
+        ctx.fillStyle = '#ffffff20'
+        ctx.beginPath()
+        ctx.arc(-width * 0.2, -width * 0.2, width * 0.3, 0, Math.PI * 2)
+        ctx.fill()
         break
 
       case 't-joint':
