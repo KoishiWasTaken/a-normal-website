@@ -33,20 +33,23 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        fs: false,
-      },
-    },
-  },
+  // Webpack configuration to stub out Node.js modules in browser bundle
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      // Stub out all Node.js modules that stockfish.js tries to import
       config.resolve.fallback = {
-        ...config.resolve.fallback,
+        ...(config.resolve.fallback || {}),
         fs: false,
         path: false,
         crypto: false,
+        stream: false,
+        os: false,
+        buffer: false,
+        child_process: false,
+        net: false,
+        tls: false,
+        module: false,
+        perf_hooks: false,
       };
     }
     return config;
