@@ -69,9 +69,9 @@ export default function DeepBluePage() {
           // Silently handle errors
         }
 
-        // Configure engine for maximum strength
+        // Configure engine strength
         worker.postMessage('uci')
-        worker.postMessage('setoption name Skill Level value 20') // 0-20, 20 is maximum strength
+        worker.postMessage('setoption name Skill Level value 8') // 0-20, 8 is challenging but beatable
         worker.postMessage('setoption name Move Overhead value 100')
         worker.postMessage('setoption name Hash value 128') // Use 128MB hash
         worker.postMessage('setoption name Threads value 2') // Use 2 threads
