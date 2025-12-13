@@ -91,31 +91,35 @@ export default function HelpPage() {
     <div className="min-h-screen bg-background">
       {/* Scrolling Headline */}
       <div className="w-full overflow-hidden bg-muted border-b border-border py-4">
-        <div className="whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-seamless inline-block">
-          {/* First copy */}
-          {headlineSequence.map((item, index) => (
-            <span key={`first-${index}`} className="inline-block">
-              <span
-                className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
-                onClick={() => handleHeadlineClick(item.isLink)}
-              >
-                {item.text}
+        <div className="whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-seamless">
+          <div className="inline-flex">
+            {/* First copy */}
+            {headlineSequence.map((item, index) => (
+              <span key={`first-${index}`} className="inline-flex items-center">
+                <span
+                  className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
+                  onClick={() => handleHeadlineClick(item.isLink)}
+                >
+                  {item.text}
+                </span>
+                <span className="inline-block" style={{ width: '600px' }}></span>
               </span>
-              <span className="inline-block" style={{ width: '600px' }}></span>
-            </span>
-          ))}
-          {/* Second copy for seamless loop */}
-          {headlineSequence.map((item, index) => (
-            <span key={`second-${index}`} className="inline-block">
-              <span
-                className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
-                onClick={() => handleHeadlineClick(item.isLink)}
-              >
-                {item.text}
+            ))}
+          </div>
+          <div className="inline-flex">
+            {/* Second copy for seamless loop */}
+            {headlineSequence.map((item, index) => (
+              <span key={`second-${index}`} className="inline-flex items-center">
+                <span
+                  className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
+                  onClick={() => handleHeadlineClick(item.isLink)}
+                >
+                  {item.text}
+                </span>
+                <span className="inline-block" style={{ width: '600px' }}></span>
               </span>
-              <span className="inline-block" style={{ width: '600px' }}></span>
-            </span>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -128,16 +132,17 @@ export default function HelpPage() {
 
       <style jsx>{`
         @keyframes scroll-seamless {
-          0% {
+          from {
             transform: translateX(0);
           }
-          100% {
-            transform: translateX(-50%);
+          to {
+            transform: translateX(calc(-100% / 2));
           }
         }
 
         .animate-scroll-seamless {
           animation: scroll-seamless 120s linear infinite;
+          display: inline-flex;
         }
       `}</style>
     </div>
