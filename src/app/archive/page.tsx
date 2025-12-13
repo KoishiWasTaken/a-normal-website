@@ -33,6 +33,7 @@ interface Discovery {
 interface AllPagesEntry extends PageInfo {
   discovered: boolean
   discovery?: Discovery
+  total_discoverers?: number
 }
 
 type DifficultyLevel = 'plain' | 'atypical' | 'bizarre' | 'cryptic' | 'diabolical' | 'enigmatic'
@@ -231,12 +232,12 @@ export default function IndexPage() {
         `)
         .eq('user_id', user.id)
 
-      // Get statistics for discovered pages
-      const discoveredPageIds = discoveryData?.map((d: any) => d.page_id) || []
+      // Get statistics for ALL pages
+      const allPageIds = allPagesData.map((p) => p.id)
       const { data: statsData } = await supabase
         .from('page_statistics')
         .select('page_id, unique_discoverers')
-        .in('page_id', discoveredPageIds)
+        .in('page_id', allPageIds)
 
       const statsMap = new Map(statsData?.map((s) => [s.page_id, s.unique_discoverers]))
 
@@ -259,7 +260,8 @@ export default function IndexPage() {
 
         return {
           ...page,
-          discovered: false
+          discovered: false,
+          total_discoverers: statsMap.get(page.id) || 0
         }
       })
 
@@ -605,6 +607,16 @@ export default function IndexPage() {
                               you haven't found this page yet
                             </p>
                           </div>
+                          {selectedPage.total_discoverers !== undefined && (
+                            <div className="pt-4 mt-2 border-t border-border/50 inline-block px-8">
+                              <div className="text-xs text-muted-foreground font-mono mb-1">
+                                total discoverers
+                              </div>
+                              <div className="text-lg text-foreground font-mono font-bold">
+                                {selectedPage.total_discoverers}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
