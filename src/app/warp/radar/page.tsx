@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -38,10 +39,7 @@ export default function RadarPage() {
       setLoading(false)
 
       if (user && !tracked) {
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'radar'
-        })
+      await recordPageDiscovery(supabase, user.id, 'radar')
         setTracked(true)
 
         // Check if user has discovered Celestial Inferno

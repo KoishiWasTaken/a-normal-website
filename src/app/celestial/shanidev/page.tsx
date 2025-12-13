@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Scale, Shield, Clock, Gavel } from 'lucide-react'
@@ -36,10 +37,7 @@ export default function ShanidevPage() {
       }
 
       // Track page discovery
-      await supabase.rpc('record_page_discovery', {
-        p_user_id: user.id,
-        p_page_key: 'shanidev'
-      })
+      await recordPageDiscovery(supabase, user.id, 'shanidev')
 
       setLoading(false)
     }

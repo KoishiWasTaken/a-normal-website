@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,10 +29,7 @@ export default function LibraryOfBabelPage() {
 
       if (user && !tracked) {
         // Track page discovery
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'libraryofbabel'
-        })
+      await recordPageDiscovery(supabase, user.id, 'libraryofbabel')
         setTracked(true)
       }
     }

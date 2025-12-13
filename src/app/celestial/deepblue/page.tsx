@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { Chess } from 'chess.js'
 import CustomChessboard from '@/components/CustomChessboard'
@@ -104,10 +105,7 @@ export default function DeepBluePage() {
       setUser(user)
 
       // Track page discovery
-      await supabase.rpc('record_page_discovery', {
-        p_user_id: user.id,
-        p_page_key: 'deepblue'
-      })
+      await recordPageDiscovery(supabase, user.id, 'deepblue')
 
       setLoading(false)
     }

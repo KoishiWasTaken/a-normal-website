@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
 export default function CelestialInfernoPage() {
@@ -18,10 +19,7 @@ export default function CelestialInfernoPage() {
 
       if (user && !tracked) {
         // Track page discovery
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'celestialinferno'
-        })
+      await recordPageDiscovery(supabase, user.id, 'celestialinferno')
         setTracked(true)
       }
     }

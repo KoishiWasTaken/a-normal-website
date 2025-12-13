@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -208,10 +209,7 @@ export default function PuzzlePlazaPage() {
 
       // Track page discovery
       if (!tracked) {
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'puzzleplaza'
-        })
+      await recordPageDiscovery(supabase, user.id, 'puzzleplaza')
         setTracked(true)
       }
 

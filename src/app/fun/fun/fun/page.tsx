@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,10 +30,7 @@ export default function FunPage() {
       setUser(user)
 
       // Track page discovery
-      await supabase.rpc('record_page_discovery', {
-        p_user_id: user.id,
-        p_page_key: 'funfunfun'
-      })
+      await recordPageDiscovery(supabase, user.id, 'funfunfun')
 
       // Check fun value
       const { data: profile } = await supabase

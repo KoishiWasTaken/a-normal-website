@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 
 export default function EndOfTheEndPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -21,10 +22,7 @@ export default function EndOfTheEndPage() {
       setLoading(false)
 
       if (user && !tracked) {
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'endoftheend'
-        })
+      await recordPageDiscovery(supabase, user.id, 'endoftheend')
         setTracked(true)
       }
     }

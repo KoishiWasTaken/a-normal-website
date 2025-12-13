@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { recordPageDiscovery } from '@/lib/utils'
 
 export default function BeginningOfTheBeginningPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -20,10 +21,7 @@ export default function BeginningOfTheBeginningPage() {
       setLoading(false)
 
       if (user && !tracked) {
-        await supabase.rpc('record_page_discovery', {
-          p_user_id: user.id,
-          p_page_key: 'beginningofthebeginning'
-        })
+      await recordPageDiscovery(supabase, user.id, 'beginningofthebeginning')
         setTracked(true)
       }
     }
