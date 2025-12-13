@@ -10,7 +10,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Lightbulb, Grid3x3, Lock, Zap, Waypoints } from 'lucide-react'
+import { Lightbulb, Grid3x3, Lock, Zap, Waypoints, AlertTriangle } from 'lucide-react'
+import Bluescreen from '@/components/Bluescreen'
 
 type PuzzleType = 'lighting' | 'sliding' | 'flow'
 
@@ -63,6 +64,11 @@ export default function PuzzlePlazaPage() {
     path: { row: number, col: number }[]
     color: string
   } | null>(null)
+
+  // Glitch and bluescreen state
+  const [isGlitching, setIsGlitching] = useState(false)
+  const [showBluescreen, setShowBluescreen] = useState(false)
+  const [glitchPhase, setGlitchPhase] = useState(0)
 
   // Initialize lighting puzzle
   const initLightingPuzzle = (level: number) => {
@@ -440,6 +446,26 @@ export default function PuzzlePlazaPage() {
     handleFlowMouseUp()
   }
 
+  const handleCorruptedTab = () => {
+    setIsGlitching(true)
+    setGlitchPhase(0)
+
+    // Phase 1: First glitch
+    setTimeout(() => setGlitchPhase(1), 200)
+
+    // Phase 2: Second glitch
+    setTimeout(() => setGlitchPhase(2), 500)
+
+    // Phase 3: Third glitch
+    setTimeout(() => setGlitchPhase(3), 800)
+
+    // Phase 4: Bluescreen
+    setTimeout(() => {
+      setIsGlitching(false)
+      setShowBluescreen(true)
+    }, 1200)
+  }
+
   const checkFlowComplete = (board: FlowCell[][], connections: Map<number, FlowConnection>) => {
     const size = board.length
 
@@ -650,8 +676,20 @@ export default function PuzzlePlazaPage() {
     )
   }
 
+  // Render bluescreen if active
+  if (showBluescreen) {
+    return <Bluescreen />
+  }
+
+  // Glitch effect styles
+  const glitchStyles = isGlitching ? {
+    filter: `hue-rotate(${glitchPhase * 90}deg) brightness(${1 + glitchPhase * 0.3})`,
+    transform: `translate(${(glitchPhase % 2) * 5}px, ${(glitchPhase % 3) * 3}px) scale(${1 + glitchPhase * 0.02})`,
+    transition: 'none'
+  } : {}
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-300 via-pink-400 to-purple-500 animate-gradient">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-300 via-pink-400 to-purple-500 animate-gradient" style={glitchStyles}>
       <style jsx global>{`
         @keyframes gradient {
           0% { background-position: 0% 50%; }
@@ -710,10 +748,17 @@ export default function PuzzlePlazaPage() {
                 <Waypoints className="mr-2" size={16} />
                 Flow
               </TabsTrigger>
-              <TabsTrigger value="unavailable2" disabled className="font-mono font-bold opacity-50">
-                <Lock className="mr-2" size={16} />
-                Unavailable
-              </TabsTrigger>
+              <button
+                onClick={handleCorruptedTab}
+                className="font-mono font-bold bg-gradient-to-r from-red-500 via-purple-500 to-orange-500 text-white hover:from-red-600 hover:via-purple-600 hover:to-orange-600 transition-all px-3 py-2 rounded-sm flex items-center justify-center gap-2"
+                style={{
+                  fontFamily: 'monospace',
+                  letterSpacing: '2px'
+                }}
+              >
+                <AlertTriangle className="animate-pulse" size={16} />
+                �¤Ã¹EÍŸˆœ
+              </button>
             </TabsList>
 
             {/* Lighting Puzzle */}

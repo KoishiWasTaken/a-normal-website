@@ -29,6 +29,7 @@ export default function RadarPage() {
   const [hasDiscoveredInferno, setHasDiscoveredInferno] = useState(false)
   const [hasDiscoveredShanidev, setHasDiscoveredShanidev] = useState(false)
   const [hasDiscoveredDeepblue, setHasDiscoveredDeepblue] = useState(false)
+  const [hasDiscoveredUnnerfed, setHasDiscoveredUnnerfed] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -74,6 +75,17 @@ export default function RadarPage() {
         if (deepblueDiscoveries && deepblueDiscoveries.length > 0) {
           setHasDiscoveredDeepblue(true)
         }
+
+        // Check if user has discovered Unnerfed Puzzle Plaza
+        const { data: unnerfedDiscoveries } = await supabase
+          .from('page_discoveries')
+          .select('page_id, pages!inner(page_key)')
+          .eq('user_id', user.id)
+          .eq('pages.page_key', 'zlepuzazapl')
+
+        if (unnerfedDiscoveries && unnerfedDiscoveries.length > 0) {
+          setHasDiscoveredUnnerfed(true)
+        }
       }
     }
 
@@ -104,7 +116,15 @@ export default function RadarPage() {
       hint: hasDiscoveredShanidev ? null : 'Warp at FV8',
       destination: '/celestial/shanidev'
     },
-    { ra: '06h 51m 07s', dec: '+23° 14\' 33"', label: 'OBJECT-07', name: null, locked: true, hint: null, destination: null },
+    {
+      ra: '06h 51m 07s',
+      dec: '+23° 14\' 33"',
+      label: hasDiscoveredUnnerfed ? 'Uranus' : 'OBJECT-07',
+      name: hasDiscoveredUnnerfed ? 'Uranus' : null,
+      locked: !hasDiscoveredUnnerfed,
+      hint: 'Bluescreen Recovery Key',
+      destination: '/zlepuzazapl'
+    },
     {
       ra: '01h 18m 42s',
       dec: '+08° 17\' 54"',

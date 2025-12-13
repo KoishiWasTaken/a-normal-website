@@ -122,6 +122,7 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   waterworld: 'bizarre',
   terminal: 'bizarre',
   pipeworks: 'bizarre',
+  zlepuzazapl: 'bizarre',
   eyeofthehurricane: 'cryptic'
 }
 
@@ -162,6 +163,7 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   waterworld: 206,                // Puzzle Plaza sliding puzzle unlock
   terminal: 207,                  // Hidden hint in /help page
   pipeworks: 208,                 // Puzzle Plaza flow puzzle unlock
+  zlepuzazapl: 209,               // Bluescreen recovery from corrupted tab
   // Cryptic (300-399)
   eyeofthehurricane: 300,         // Win chess against Deep Blue AI
   // Diabolical (400-499)
@@ -174,7 +176,8 @@ const pageDisplayNames: Record<string, string> = {
   shanidev: 'Lord Saturn',
   funfunfun: 'FUN',
   yetdarker: 'Dark, Darker, Yet Darker',
-  waterworld: 'Water World'
+  waterworld: 'Water World',
+  zlepuzazapl: 'Puzzle Plaza (Unnerfed)'
 }
 
 const difficultyOrder: Record<DifficultyLevel, number> = {
