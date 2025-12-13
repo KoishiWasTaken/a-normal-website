@@ -338,7 +338,48 @@ export default function PuzzlePlazaPage() {
     // Can't go to already occupied cells in current path
     if (currentDrag.path.some(p => p.row === row && p.col === col)) return
 
-    // Add to path
+    // LENIENT CONNECTION: Check if we're adjacent to target node
+    // If so, auto-complete the connection
+    const size = flowBoard.length
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+    for (const [dr, dc] of directions) {
+      const checkRow = row + dr
+      const checkCol = col + dc
+      if (checkRow >= 0 && checkRow < size && checkCol >= 0 && checkCol < size) {
+        const adjacentCell = flowBoard[checkRow][checkCol]
+        if (adjacentCell.isNode &&
+            adjacentCell.pairId === currentDrag.pairId &&
+            adjacentCell.nodeColor === currentDrag.color) {
+          // Found target node adjacent to current position - auto-complete!
+          const completePath = [...currentDrag.path, { row, col }, { row: checkRow, col: checkCol }]
+
+          // Update board with complete path
+          const newBoard = flowBoard.map(r => r.map(c => ({ ...c })))
+          for (let i = 1; i < completePath.length - 1; i++) {
+            newBoard[completePath[i].row][completePath[i].col].color = currentDrag.color
+          }
+          setFlowBoard(newBoard)
+
+          // Save connection
+          const newConnections = new Map(flowConnections)
+          newConnections.set(currentDrag.pairId, {
+            pairId: currentDrag.pairId,
+            path: completePath,
+            complete: true
+          })
+          setFlowConnections(newConnections)
+
+          // Clear current drag
+          setCurrentDrag(null)
+
+          // Check if puzzle is complete
+          checkFlowComplete(newBoard, newConnections)
+          return
+        }
+      }
+    }
+
+    // Add to path (normal behavior)
     const newPath = [...currentDrag.path, { row, col }]
     setCurrentDrag({
       ...currentDrag,
@@ -818,33 +859,47 @@ export default function PuzzlePlazaPage() {
                       }}
                     >
                       {flowBoard.map((row, i) => (
-                        row.map((cell, j) => (
-                          <div
-                            key={`${i}-${j}`}
-                            data-flow-cell="true"
-                            data-flow-row={i}
-                            data-flow-col={j}
-                            onMouseDown={() => handleFlowMouseDown(i, j)}
-                            onMouseEnter={() => handleFlowMouseEnter(i, j)}
-                            onTouchStart={(e) => handleFlowTouchStart(e, i, j)}
-                            className={`w-10 h-10 md:w-12 md:h-12 rounded-md border-2 transition-all duration-100 cursor-pointer ${
-                              cell.isNode ? 'border-gray-800' : 'border-gray-300'
-                            }`}
-                            style={{
-                              backgroundColor: cell.isNode ? cell.nodeColor : (cell.color || '#f3f4f6'),
-                              boxShadow: cell.isNode ? '0 4px 6px rgba(0,0,0,0.3)' : 'none'
-                            }}
-                          >
-                            {cell.isNode && (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <div
-                                  className="w-5 h-5 md:w-6 md:h-6 rounded-full border-4 border-white"
-                                  style={{ backgroundColor: cell.nodeColor }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        ))
+                        row.map((cell, j) => {
+                          // Dynamic cell size based on grid size
+                          const cellSize = flowBoard.length === 6
+                            ? 'w-12 h-12 md:w-14 md:h-14'
+                            : flowBoard.length === 8
+                            ? 'w-10 h-10 md:w-11 md:h-11'
+                            : 'w-8 h-8 md:w-9 md:h-9' // 10x10
+                          const nodeDotSize = flowBoard.length === 6
+                            ? 'w-6 h-6 md:w-7 md:h-7'
+                            : flowBoard.length === 8
+                            ? 'w-5 h-5 md:w-6 md:h-6'
+                            : 'w-4 h-4 md:w-5 md:h-5' // 10x10
+
+                          return (
+                            <div
+                              key={`${i}-${j}`}
+                              data-flow-cell="true"
+                              data-flow-row={i}
+                              data-flow-col={j}
+                              onMouseDown={() => handleFlowMouseDown(i, j)}
+                              onMouseEnter={() => handleFlowMouseEnter(i, j)}
+                              onTouchStart={(e) => handleFlowTouchStart(e, i, j)}
+                              className={`${cellSize} rounded-md border-2 transition-all duration-100 cursor-pointer ${
+                                cell.isNode ? 'border-gray-800' : 'border-gray-300'
+                              }`}
+                              style={{
+                                backgroundColor: cell.isNode ? cell.nodeColor : (cell.color || '#f3f4f6'),
+                                boxShadow: cell.isNode ? '0 4px 6px rgba(0,0,0,0.3)' : 'none'
+                              }}
+                            >
+                              {cell.isNode && (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <div
+                                    className={`${nodeDotSize} rounded-full border-4 border-white`}
+                                    style={{ backgroundColor: cell.nodeColor }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })
                       ))}
                     </div>
                     <p className="text-sm font-mono text-purple-600">
