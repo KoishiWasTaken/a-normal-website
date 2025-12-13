@@ -182,11 +182,11 @@ export default function PuzzlePlazaPage() {
         data.forEach(progress => {
           if (progress.puzzle_type === 'lighting' && progress.unlocked) {
             setLightingUnlocked(true)
-            setLightingLevel(3)
+            // Always start at level 1, don't restore level
           }
           if (progress.puzzle_type === 'sliding' && progress.unlocked) {
             setSlidingUnlocked(true)
-            setSlidingLevel(3)
+            // Always start at level 1, don't restore level
           }
         })
       }
@@ -215,7 +215,7 @@ export default function PuzzlePlazaPage() {
         setTracked(true)
       }
 
-      // Load progress
+      // Load progress (only unlock status, always start at level 1)
       await loadPuzzleProgress()
 
       setLoading(false)
@@ -321,44 +321,45 @@ export default function PuzzlePlazaPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {!lightingUnlocked && (
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg border-4 border-purple-400">
-                        {lightingBoard.map((row, i) => (
-                          <div key={i} className="flex gap-2">
-                            {row.map((isOn, j) => (
-                              <button
-                                key={`${i}-${j}`}
-                                onClick={() => toggleLight(i, j)}
-                                className={`w-12 h-12 md:w-16 md:h-16 rounded-lg border-4 transition-all duration-300 transform hover:scale-110 ${
-                                  isOn
-                                    ? 'bg-yellow-400 border-yellow-600 shadow-lg shadow-yellow-400/50'
-                                    : 'bg-gray-800 border-gray-600'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-sm font-mono text-purple-600">
-                        Grid Size: {lightingBoard.length}x{lightingBoard.length}
-                      </p>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg border-4 border-purple-400">
+                      {lightingBoard.map((row, i) => (
+                        <div key={i} className="flex gap-2">
+                          {row.map((isOn, j) => (
+                            <button
+                              key={`${i}-${j}`}
+                              onClick={() => toggleLight(i, j)}
+                              className={`w-12 h-12 md:w-16 md:h-16 rounded-lg border-4 transition-all duration-300 transform hover:scale-110 ${
+                                isOn
+                                  ? 'bg-yellow-400 border-yellow-600 shadow-lg shadow-yellow-400/50'
+                                  : 'bg-gray-800 border-gray-600'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      ))}
                     </div>
-                  )}
+                    <p className="text-sm font-mono text-purple-600">
+                      Grid Size: {lightingBoard.length}x{lightingBoard.length} | Level {lightingLevel}/3
+                    </p>
+                  </div>
 
-                  {lightingUnlocked && (
-                    <div className="text-center space-y-4 py-8">
-                      <div className="text-6xl mb-4">🎉</div>
-                      <p className="text-2xl font-mono font-bold text-green-600">
-                        Puzzle Complete!
+                  {/* Always show Advance button */}
+                  <div className="text-center pt-4 border-t border-purple-300">
+                    <Link href="/dark/darker/yetdarker">
+                      <Button
+                        disabled={!lightingUnlocked}
+                        className="font-mono text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-6 px-8 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {lightingUnlocked ? 'Advance →' : '🔒 Complete Level 3 to Unlock'}
+                      </Button>
+                    </Link>
+                    {lightingUnlocked && (
+                      <p className="text-sm font-mono text-green-600 mt-2">
+                        ✓ Unlocked!
                       </p>
-                      <Link href="/puzzleplaza/advance">
-                        <Button className="font-mono text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-6 px-8 shadow-xl">
-                          Advance →
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -378,47 +379,48 @@ export default function PuzzlePlazaPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {!slidingUnlocked && (
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg border-4 border-pink-400">
-                        {slidingBoard.map((row, i) => (
-                          <div key={i} className="flex gap-2">
-                            {row.map((num, j) => (
-                              <button
-                                key={`${i}-${j}`}
-                                onClick={() => slideTile(i, j)}
-                                disabled={num === 0}
-                                className={`w-12 h-12 md:w-16 md:h-16 rounded-lg border-4 font-mono font-bold text-xl transition-all duration-200 ${
-                                  num === 0
-                                    ? 'bg-gray-200 border-gray-300 cursor-default'
-                                    : 'bg-gradient-to-br from-pink-400 to-purple-500 border-pink-600 text-white hover:scale-105 cursor-pointer shadow-lg'
-                                }`}
-                              >
-                                {num !== 0 && num}
-                              </button>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-sm font-mono text-purple-600">
-                        Grid Size: {slidingBoard.length}x{slidingBoard.length}
-                      </p>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg border-4 border-pink-400">
+                      {slidingBoard.map((row, i) => (
+                        <div key={i} className="flex gap-2">
+                          {row.map((num, j) => (
+                            <button
+                              key={`${i}-${j}`}
+                              onClick={() => slideTile(i, j)}
+                              disabled={num === 0}
+                              className={`w-12 h-12 md:w-16 md:h-16 rounded-lg border-4 font-mono font-bold text-xl transition-all duration-200 ${
+                                num === 0
+                                  ? 'bg-gray-200 border-gray-300 cursor-default'
+                                  : 'bg-gradient-to-br from-pink-400 to-purple-500 border-pink-600 text-white hover:scale-105 cursor-pointer shadow-lg'
+                              }`}
+                            >
+                              {num !== 0 && num}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
                     </div>
-                  )}
+                    <p className="text-sm font-mono text-purple-600">
+                      Grid Size: {slidingBoard.length}x{slidingBoard.length} | Level {slidingLevel}/3
+                    </p>
+                  </div>
 
-                  {slidingUnlocked && (
-                    <div className="text-center space-y-4 py-8">
-                      <div className="text-6xl mb-4">🎉</div>
-                      <p className="text-2xl font-mono font-bold text-green-600">
-                        Puzzle Complete!
+                  {/* Always show Advance button */}
+                  <div className="text-center pt-4 border-t border-pink-300">
+                    <Link href="/waterworld">
+                      <Button
+                        disabled={!slidingUnlocked}
+                        className="font-mono text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-6 px-8 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {slidingUnlocked ? 'Advance →' : '🔒 Complete Level 3 to Unlock'}
+                      </Button>
+                    </Link>
+                    {slidingUnlocked && (
+                      <p className="text-sm font-mono text-green-600 mt-2">
+                        ✓ Unlocked!
                       </p>
-                      <Link href="/puzzleplaza/advance">
-                        <Button className="font-mono text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-6 px-8 shadow-xl">
-                          Advance →
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

@@ -111,6 +111,8 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   celestialinferno: 'bizarre',
   shanidev: 'bizarre',
   deepblue: 'bizarre',
+  yetdarker: 'bizarre',
+  waterworld: 'bizarre',
   eyeofthehurricane: 'cryptic'
 }
 
@@ -146,6 +148,8 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   celestialinferno: 202,          // Library puzzle v>e>n>u>s
   shanidev: 203,                  // Vault warp + FV=8 requirement
   deepblue: 204,                  // FV=72 + invitation code "neptune"
+  yetdarker: 205,                 // Puzzle Plaza lighting puzzle unlock
+  waterworld: 206,                // Puzzle Plaza sliding puzzle unlock
   // Cryptic (300-399)
   eyeofthehurricane: 300,         // Win chess against Deep Blue AI
   // Diabolical (400-499)
@@ -156,7 +160,9 @@ const pageSubjectiveDifficulty: Record<string, number> = {
 const pageDisplayNames: Record<string, string> = {
   celestialinferno: 'Inferno',
   shanidev: 'Lord Saturn',
-  funfunfun: 'FUN'
+  funfunfun: 'FUN',
+  yetdarker: 'Dark, Darker, Yet Darker',
+  waterworld: 'Water World'
 }
 
 const difficultyOrder: Record<DifficultyLevel, number> = {
