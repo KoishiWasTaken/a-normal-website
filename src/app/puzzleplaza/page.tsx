@@ -339,17 +339,22 @@ export default function PuzzlePlazaPage() {
     if (currentDrag.path.some(p => p.row === row && p.col === col)) return
 
     // LENIENT CONNECTION: Check if we're adjacent to target node
-    // If so, auto-complete the connection
+    // If so, auto-complete the connection (but exclude the starting node!)
     const size = flowBoard.length
+    const startNode = currentDrag.path[0] // The node where we started
     const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
     for (const [dr, dc] of directions) {
       const checkRow = row + dr
       const checkCol = col + dc
       if (checkRow >= 0 && checkRow < size && checkCol >= 0 && checkCol < size) {
         const adjacentCell = flowBoard[checkRow][checkCol]
+        // Make sure this is NOT the starting node (must have path length > 2 to complete)
+        const isStartNode = checkRow === startNode.row && checkCol === startNode.col
         if (adjacentCell.isNode &&
             adjacentCell.pairId === currentDrag.pairId &&
-            adjacentCell.nodeColor === currentDrag.color) {
+            adjacentCell.nodeColor === currentDrag.color &&
+            !isStartNode &&
+            currentDrag.path.length >= 2) { // Require at least 2 cells (start + 1 path cell) before auto-completing
           // Found target node adjacent to current position - auto-complete!
           const completePath = [...currentDrag.path, { row, col }, { row: checkRow, col: checkCol }]
 
