@@ -54,8 +54,8 @@ export default function DeepBluePage() {
       try {
         console.log('[STOCKFISH] Initializing engine...')
 
-        // Use Web Worker with CDN-hosted Stockfish to bypass bundling issues
-        const worker = new Worker('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js')
+        // Use Web Worker with locally-hosted Stockfish (no CORS issues)
+        const worker = new Worker('/stockfish.js')
 
         let initialized = false
 
