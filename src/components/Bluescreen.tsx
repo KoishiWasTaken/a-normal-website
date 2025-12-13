@@ -7,7 +7,51 @@ export default function Bluescreen() {
   const [keyBuffer, setKeyBuffer] = useState('')
   const [showRecovery, setShowRecovery] = useState(false)
   const [soundPlayed, setSoundPlayed] = useState(false)
+  const [percentage, setPercentage] = useState(0)
   const router = useRouter()
+
+  // Erratic percentage progression
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
+    const incrementPercentage = () => {
+      setPercentage(prev => {
+        // If we've reached 100%, redirect to homepage
+        if (prev >= 100) {
+          setTimeout(() => {
+            router.push('/')
+          }, 1000)
+          return 100
+        }
+
+        // If at 99%, pause for 2-3 seconds before going to 100
+        if (prev === 99) {
+          timeoutId = setTimeout(() => {
+            setPercentage(100)
+          }, 2500)
+          return 99
+        }
+
+        // Erratic increment between 1-7%
+        const increment = Math.floor(Math.random() * 7) + 1
+        const newValue = Math.min(prev + increment, 99)
+
+        // Schedule next increment with random delay (200-800ms)
+        const delay = Math.floor(Math.random() * 600) + 200
+        timeoutId = setTimeout(incrementPercentage, delay)
+
+        return newValue
+      })
+    }
+
+    // Start the progression
+    const initialDelay = setTimeout(incrementPercentage, 500)
+
+    return () => {
+      clearTimeout(initialDelay)
+      clearTimeout(timeoutId)
+    }
+  }, [router])
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -63,7 +107,7 @@ export default function Bluescreen() {
           </p>
 
           <p className="text-xl opacity-90">
-            <span className="inline-block min-w-[60px]">0%</span> complete
+            <span className="inline-block min-w-[60px]">{percentage}%</span> complete
           </p>
 
           <div className="pt-8 space-y-2 text-sm opacity-75">
