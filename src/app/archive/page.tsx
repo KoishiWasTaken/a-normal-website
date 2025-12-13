@@ -112,6 +112,7 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   libraryofbabel: 'atypical',
   funfunfun: 'atypical',
   puzzleplaza: 'atypical',
+  help: 'atypical',
   beginningofthebeginning: 'bizarre',
   fortheworthy: 'bizarre',
   celestialinferno: 'bizarre',
@@ -119,6 +120,7 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   deepblue: 'bizarre',
   yetdarker: 'bizarre',
   waterworld: 'bizarre',
+  terminal: 'bizarre',
   eyeofthehurricane: 'cryptic'
 }
 
@@ -148,6 +150,7 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   '4O4': 106,           // Rare 404 redirect (0.1%)
   funfunfun: 107,       // Rare homepage redirect (1/6666)
   puzzleplaza: 108,     // 10-minute homepage timer
+  help: 109,            // 1/50 chance archive header link
   // Bizarre (200-299)
   beginningofthebeginning: 200,  // Hidden text in End of the End
   fortheworthy: 201,              // Rare friend link on homepage
@@ -156,6 +159,7 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   deepblue: 204,                  // FV=72 + invitation code "neptune"
   yetdarker: 205,                 // Puzzle Plaza lighting puzzle unlock
   waterworld: 206,                // Puzzle Plaza sliding puzzle unlock
+  terminal: 207,                  // Hidden hint in /help page
   // Cryptic (300-399)
   eyeofthehurricane: 300,         // Win chess against Deep Blue AI
   // Diabolical (400-499)
@@ -187,8 +191,17 @@ export default function IndexPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [hoveredDifficulty, setHoveredDifficulty] = useState<string | null>(null)
   const [hoveredUnique, setHoveredUnique] = useState<string | null>(null)
+  const [headerText, setHeaderText] = useState<{ text: string; link: string }>({ text: 'a normal website', link: '/' })
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    // 1/50 chance to show "a free hint" instead
+    const showHint = Math.random() < 1 / 50
+    if (showHint) {
+      setHeaderText({ text: 'a free hint', link: '/help' })
+    }
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -381,8 +394,8 @@ export default function IndexPage() {
       {/* Header */}
       <header className="border-b border-border sticky top-0 bg-background z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
-            a normal website
+          <Link href={headerText.link} className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
+            {headerText.text}
           </Link>
 
           <MobileNav user={user} />
