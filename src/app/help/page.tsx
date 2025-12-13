@@ -114,7 +114,7 @@ export default function HelpPage() {
       </main>
 
       <style jsx>{`
-        @keyframes scroll-left {
+        @keyframes scroll-seamless {
           0% {
             transform: translateX(0);
           }
@@ -123,8 +123,8 @@ export default function HelpPage() {
           }
         }
 
-        .animate-scroll-left {
-          animation: scroll-left 120s linear infinite;
+        .animate-scroll-seamless {
+          animation: scroll-seamless 40s linear infinite;
         }
       `}</style>
     </div>
