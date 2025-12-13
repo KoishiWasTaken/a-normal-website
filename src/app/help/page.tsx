@@ -91,18 +91,35 @@ export default function HelpPage() {
     <div className="min-h-screen bg-background">
       {/* Scrolling Headline */}
       <div className="w-full overflow-hidden bg-muted border-b border-border py-4">
-        <div className="whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-left">
-          {headlineSequence.map((item, index) => (
-            <span key={index}>
-              <span
-                className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
-                onClick={() => handleHeadlineClick(item.isLink)}
-              >
-                {item.text}
+        <div className="flex whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-seamless">
+          {/* First copy */}
+          <div className="flex">
+            {headlineSequence.map((item, index) => (
+              <span key={`first-${index}`} className="flex items-center">
+                <span
+                  className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
+                  onClick={() => handleHeadlineClick(item.isLink)}
+                >
+                  {item.text}
+                </span>
+                <span className="inline-block" style={{ width: '600px' }}></span>
               </span>
-              <span className="inline-block" style={{ width: '800px' }}></span>
-            </span>
-          ))}
+            ))}
+          </div>
+          {/* Second copy for seamless loop */}
+          <div className="flex">
+            {headlineSequence.map((item, index) => (
+              <span key={`second-${index}`} className="flex items-center">
+                <span
+                  className={`inline-block ${item.isLink ? 'cursor-pointer' : ''}`}
+                  onClick={() => handleHeadlineClick(item.isLink)}
+                >
+                  {item.text}
+                </span>
+                <span className="inline-block" style={{ width: '600px' }}></span>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
