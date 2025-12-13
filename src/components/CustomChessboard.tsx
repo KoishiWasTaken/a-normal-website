@@ -27,6 +27,8 @@ const pieceImages: { [key: string]: string } = {
 export default function CustomChessboard({ position, onPieceDrop, isDraggable }: CustomChessboardProps) {
   const [draggedFrom, setDraggedFrom] = useState<string | null>(null)
   const [draggedOver, setDraggedOver] = useState<string | null>(null)
+  const [touchDragging, setTouchDragging] = useState(false)
+  const [touchPosition, setTouchPosition] = useState<{ x: number; y: number } | null>(null)
 
   // Parse FEN to get piece positions
   const parseFEN = (fen: string) => {
@@ -103,8 +105,68 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
     setDraggedOver(null)
   }
 
+  // Touch event handlers for mobile
+  const getSquareFromTouch = (e: React.TouchEvent<HTMLDivElement>): string | null => {
+    const touch = e.touches[0] || e.changedTouches[0]
+    if (!touch) return null
+
+    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+    if (!element) return null
+
+    // Find the square div (it has a data-square attribute we'll add)
+    const squareDiv = element.closest('[data-square]') as HTMLElement
+    return squareDiv?.dataset.square || null
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>, square: string) => {
+    const piece = board[square]
+    const isPieceWhite = piece && piece[0] === 'w'
+    const canDrag = isDraggable && isPieceWhite && !!piece
+
+    if (!canDrag) return
+
+    e.preventDefault()
+    setDraggedFrom(square)
+    setTouchDragging(true)
+
+    const touch = e.touches[0]
+    setTouchPosition({ x: touch.clientX, y: touch.clientY })
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchDragging || !draggedFrom) return
+
+    e.preventDefault()
+    const touch = e.touches[0]
+    setTouchPosition({ x: touch.clientX, y: touch.clientY })
+
+    const targetSquare = getSquareFromTouch(e)
+    if (targetSquare && targetSquare !== draggedOver) {
+      setDraggedOver(targetSquare)
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchDragging || !draggedFrom) return
+
+    e.preventDefault()
+    const targetSquare = getSquareFromTouch(e)
+
+    if (targetSquare && draggedFrom !== targetSquare) {
+      onPieceDrop(draggedFrom, targetSquare)
+    }
+
+    setDraggedFrom(null)
+    setDraggedOver(null)
+    setTouchDragging(false)
+    setTouchPosition(null)
+  }
+
   return (
-    <div className="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden border-4 border-blue-500/30 shadow-2xl shadow-blue-500/20">
+    <div
+      className="w-full aspect-square bg-slate-800 rounded-lg overflow-hidden border-4 border-blue-500/30 shadow-2xl shadow-blue-500/20 relative"
+      style={{ touchAction: 'none' }}
+    >
       <div className="w-full h-full grid grid-cols-8 grid-rows-8">
         {ranks.map((rank) =>
           files.map((file) => {
@@ -119,6 +181,7 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
             return (
               <div
                 key={square}
+                data-square={square}
                 className={`relative flex items-center justify-center ${
                   isLight ? 'bg-[#475569]' : 'bg-[#1e293b]'
                 } ${isDragSource ? 'opacity-30' : ''} ${
@@ -140,13 +203,17 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
                       handleDragStart(e, square)
                     }}
                     onDragEnd={handleDragEnd}
+                    onTouchStart={(e) => handleTouchStart(e, square)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                     className={`w-[80%] h-[80%] flex items-center justify-center ${
                       canDrag ? 'cursor-grab active:cursor-grabbing hover:scale-105' : 'cursor-not-allowed opacity-70'
                     } transition-transform select-none`}
                     style={{
                       userSelect: 'none',
                       WebkitUserSelect: 'none',
-                      MozUserSelect: 'none'
+                      MozUserSelect: 'none',
+                      touchAction: 'none'
                     }}
                   >
                     <img
@@ -166,6 +233,25 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
           })
         )}
       </div>
+
+      {/* Floating piece for touch drag */}
+      {touchDragging && touchPosition && draggedFrom && (
+        <div
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: touchPosition.x - 30,
+            top: touchPosition.y - 30,
+            width: 60,
+            height: 60
+          }}
+        >
+          <img
+            src={pieceImages[board[draggedFrom]]}
+            alt="dragging"
+            className="w-full h-full object-contain opacity-80"
+          />
+        </div>
+      )}
     </div>
   )
 }
