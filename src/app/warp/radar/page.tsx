@@ -122,7 +122,7 @@ export default function RadarPage() {
       label: hasDiscoveredUnnerfed ? 'Uranus' : 'OBJECT-07',
       name: hasDiscoveredUnnerfed ? 'Uranus' : null,
       locked: !hasDiscoveredUnnerfed,
-      hint: 'Bluescreen Recovery Key',
+      hint: hasDiscoveredUnnerfed ? null : 'Bluescreen Recovery Key',
       destination: '/zlepuzazapl'
     },
     {
