@@ -52,8 +52,6 @@ export default function DeepBluePage() {
   useEffect(() => {
     const initStockfish = async () => {
       try {
-        console.log('[STOCKFISH] Initializing engine...')
-
         // Use Web Worker with locally-hosted Stockfish (no CORS issues)
         const worker = new Worker('/stockfish.js')
 
@@ -61,16 +59,14 @@ export default function DeepBluePage() {
 
         worker.onmessage = (event: MessageEvent) => {
           const message = event.data
-          console.log('[STOCKFISH]', message)
 
           if (typeof message === 'string' && message.includes('uciok') && !initialized) {
             initialized = true
-            console.log('[STOCKFISH] Engine initialized successfully')
           }
         }
 
-        worker.onerror = (error) => {
-          console.error('[STOCKFISH] Worker error:', error)
+        worker.onerror = () => {
+          // Silently handle errors
         }
 
         // Configure engine for maximum strength
@@ -82,9 +78,8 @@ export default function DeepBluePage() {
         worker.postMessage('isready')
 
         stockfishRef.current = worker
-        console.log('[STOCKFISH] Configuration sent, waiting for uciok...')
       } catch (error) {
-        console.error('[STOCKFISH] Failed to initialize:', error)
+        // Silently handle errors
       }
     }
 
@@ -195,7 +190,6 @@ export default function DeepBluePage() {
     if (possibleMoves.length === 0) return
 
     if (!stockfishRef.current) {
-      console.warn('[AI] Stockfish not initialized! Using random fallback.')
       // Fallback: pick a random move
       const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
       const gameCopy = new Chess(currentGame.fen())
@@ -207,7 +201,6 @@ export default function DeepBluePage() {
       return
     }
 
-    console.log('[AI] Stockfish thinking... Position:', currentGame.fen())
     setAiThinking(true)
 
     // Set up one-time listener for bestmove
@@ -218,7 +211,6 @@ export default function DeepBluePage() {
         stockfishRef.current.onmessage = null // Remove listener
 
         const uciMove = message.split(' ')[1]
-        console.log('[AI] Stockfish chose move:', uciMove)
 
         try {
           const gameCopy = new Chess(currentGame.fen())
@@ -230,17 +222,14 @@ export default function DeepBluePage() {
           const move = gameCopy.move({ from, to, promotion })
 
           if (move) {
-            console.log('[AI] Move executed:', move.san)
             setGame(gameCopy)
             setPosition(gameCopy.fen())
             setAiThinking(false)
             checkGameStatus(gameCopy)
           } else {
-            console.error('[AI] Invalid move from Stockfish:', uciMove)
             setAiThinking(false)
           }
         } catch (error) {
-          console.error('[AI] Error executing move:', error)
           setAiThinking(false)
         }
       }
@@ -413,12 +402,9 @@ export default function DeepBluePage() {
 
         {/* Chess Board */}
         <div className="w-full max-w-[600px] space-y-4">
-          <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-3 text-center space-y-1">
+          <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-3 text-center">
             <p className="text-blue-300 font-mono text-sm">
               <span className="text-blue-400 font-bold">Drag</span> your pieces to move them
-            </p>
-            <p className="text-blue-400/60 font-mono text-xs">
-              Stockfish Level 20 • 2s per move • 128MB Hash
             </p>
           </div>
 
@@ -448,7 +434,7 @@ export default function DeepBluePage() {
           ) : (
             <div className="space-y-2">
               <p className="text-blue-400 font-mono text-lg">
-                {game.turn() === 'w' ? 'YOUR TURN' : (aiThinking ? 'STOCKFISH ANALYZING...' : 'DEEP BLUE THINKING...')}
+                {game.turn() === 'w' ? 'YOUR TURN' : 'DEEP BLUE THINKING...'}
               </p>
               {game.isCheck() && (
                 <p className="text-yellow-400 font-mono text-sm animate-pulse">
