@@ -137,7 +137,7 @@ export default function HelpPage() {
         }
 
         .animate-scroll-seamless {
-          animation: scroll-seamless 40s linear infinite;
+          animation: scroll-seamless 120s linear infinite;
         }
       `}</style>
     </div>

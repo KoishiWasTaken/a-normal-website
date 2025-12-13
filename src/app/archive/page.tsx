@@ -555,7 +555,7 @@ export default function IndexPage() {
                         )}
 
                         {/* How to Access */}
-                        {selectedPage.how_to_access && (
+                        {selectedPage.how_to_access && getDifficultyLevel(selectedPage.page_key) !== 'diabolical' && getDifficultyLevel(selectedPage.page_key) !== 'enigmatic' && (
                           <div className="space-y-2">
                             <h3 className="text-xs md:text-sm font-mono text-muted-foreground uppercase">
                               how to access
