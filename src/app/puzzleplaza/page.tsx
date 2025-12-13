@@ -149,7 +149,7 @@ export default function PuzzlePlazaPage() {
   // Initialize flow puzzle with guaranteed solvable configuration and full coverage
   const initFlowPuzzle = (level: number) => {
     const size = level === 1 ? 4 : level === 2 ? 6 : 8
-    const pairCount = level === 1 ? 3 : level === 2 ? 5 : 7
+    const pairCount = level === 1 ? 3 : level === 2 ? 4 : 5 // 3 colors, 4 colors, 5 colors
 
     // Create empty board
     const board: FlowCell[][] = Array(size).fill(null).map(() =>
@@ -179,7 +179,9 @@ export default function PuzzlePlazaPage() {
 
       // Try to place all pairs with paths that together cover all cells
       let pairsPlaced = 0
-      const cellsToFill = size * size
+      const totalCells = size * size
+      const nodeCells = pairCount * 2 // Each pair has 2 nodes
+      const pathCells = totalCells - nodeCells // Cells that need to be filled by paths
       let cellsFilled = 0
 
       for (let pairId = 0; pairId < pairCount; pairId++) {
@@ -216,12 +218,14 @@ export default function PuzzlePlazaPage() {
           )
 
           // For last few pairs, prefer longer paths to fill remaining cells
-          const remainingCells = cellsToFill - cellsFilled - (path ? path.length : 0)
+          const pathOnlyCells = path ? path.length - 2 : 0 // Exclude the 2 nodes from path length
+          const remainingPathCells = pathCells - cellsFilled - pathOnlyCells
           const remainingPairs = pairCount - pairId - 1
 
-          if (path && path.length >= 3) {
+          if (path && path.length >= 2) {
             // Check if this path length is reasonable for coverage
-            if (pairId < pairCount - 1 || remainingCells <= remainingPairs * 2) {
+            // Make sure remaining pairs can still fill remaining cells
+            if (remainingPairs === 0 || remainingPathCells >= remainingPairs) {
               foundValidPair = true
 
               // Mark all path cells as used
@@ -230,7 +234,7 @@ export default function PuzzlePlazaPage() {
               }
 
               paths.push(path)
-              cellsFilled += path.length
+              cellsFilled += pathOnlyCells // Only count path cells, not nodes
 
               // Place nodes
               board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
@@ -250,8 +254,8 @@ export default function PuzzlePlazaPage() {
         }
       }
 
-      // Check if we successfully placed all pairs and filled all cells
-      if (pairsPlaced === pairCount && cellsFilled === cellsToFill) {
+      // Check if we successfully placed all pairs and filled all path cells
+      if (pairsPlaced === pairCount && cellsFilled === pathCells) {
         setFlowBoard(board)
         setFlowNodes(nodes)
         setFlowConnections(new Map())
@@ -460,7 +464,7 @@ export default function PuzzlePlazaPage() {
 
   const checkFlowComplete = (board: FlowCell[][], connections: Map<number, FlowConnection>) => {
     const size = board.length
-    const pairCount = flowLevel === 1 ? 3 : flowLevel === 2 ? 5 : 7
+    const pairCount = flowLevel === 1 ? 3 : flowLevel === 2 ? 4 : 5
 
     // Check all pairs are connected
     if (connections.size !== pairCount) return
