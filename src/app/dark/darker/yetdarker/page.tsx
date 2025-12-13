@@ -86,129 +86,102 @@ export default function YetDarkerPage() {
   return (
     <>
       <style jsx global>{`
-        body {
-          cursor: none;
-        }
-
-        .flashlight-viewport {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: black;
-          overflow: hidden;
-          cursor: none;
-        }
-
-        .flashlight-content {
+        .dark-page-container {
           position: relative;
-          width: 100%;
           min-height: 100vh;
-          background: black;
-          color: transparent;
+          background: #0a0a0a;
         }
 
-        .flashlight-mask {
-          position: absolute;
+        .dark-overlay {
+          position: fixed;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
           background: black;
           pointer-events: none;
-          mix-blend-mode: multiply;
-        }
-
-        .visible-content {
-          position: relative;
-          z-index: 1;
-          color: #e0e0e0;
-          mix-blend-mode: screen;
+          z-index: 9999;
         }
       `}</style>
 
-      <div className="flashlight-viewport">
-        {/* Radial gradient that follows cursor */}
+      <div className="dark-page-container">
+        {/* Black overlay with flashlight hole */}
         <div
-          className="flashlight-mask"
+          className="dark-overlay"
           style={{
-            background: `radial-gradient(circle 150px at ${mousePos.x}px ${mousePos.y}px, transparent 0%, black 100%)`
+            background: `radial-gradient(circle 150px at ${mousePos.x}px ${mousePos.y}px, transparent 0%, rgba(0,0,0,0.98) 150px, black 100%)`
           }}
         />
 
-        {/* Content that becomes visible in the light */}
-        <div className="flashlight-content visible-content">
-          {/* Header */}
-          <header className="border-b border-gray-800 bg-black/50 backdrop-blur sticky top-0 z-10">
-            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-              <Link href="/" className="text-lg md:text-xl font-mono text-gray-400 hover:text-gray-300 transition-colors">
-                a normal website
-              </Link>
-              <Link href="/archive">
-                <Button variant="outline" className="font-mono border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-gray-200">
-                  archive
-                </Button>
-              </Link>
-            </div>
-          </header>
+        {/* Header */}
+        <header className="border-b border-gray-800 bg-black/50 backdrop-blur sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link href="/" className="text-lg md:text-xl font-mono text-gray-400 hover:text-gray-300 transition-colors">
+              a normal website
+            </Link>
+            <Link href="/archive">
+              <Button variant="outline" className="font-mono border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-gray-200">
+                archive
+              </Button>
+            </Link>
+          </div>
+        </header>
 
-          {/* Main Content */}
-          <main className="container mx-auto px-4 py-8 md:py-16">
-            <div className="max-w-4xl mx-auto space-y-8">
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-8 md:py-16">
+          <div className="max-w-4xl mx-auto space-y-8">
               {/* Title */}
               <div className="text-center space-y-4 mb-12">
-                <h1 className="text-4xl md:text-6xl font-mono font-bold text-gray-300 tracking-tight">
-                  CLASSIFIED
-                </h1>
-                <p className="text-lg md:text-xl text-gray-500 font-mono">
-                  Research Division • Sector 7 • Level ███
-                </p>
-                <div className="text-sm text-red-500 font-mono mt-4">
-                  ⚠ CLEARANCE LEVEL OMEGA REQUIRED ⚠
-                </div>
-              </div>
-
-              {/* Experiments */}
-              <div className="space-y-6">
-                {experiments.map((exp) => (
-                  <div
-                    key={exp.number}
-                    className="border border-gray-800 bg-gray-900/30 backdrop-blur rounded p-4 md:p-6"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="font-mono text-gray-500 text-sm min-w-[100px]">
-                        ENTRY #{exp.number.toString().padStart(2, '0')}
-                      </div>
-                      <div className="flex-1">
-                        <p className={`font-mono text-sm md:text-base leading-relaxed ${
-                          exp.redacted ? 'text-gray-700' : 'text-gray-400'
-                        }`}>
-                          {exp.text}
-                        </p>
-                        {exp.number === 17 && (
-                          <p className="text-xs text-gray-600 mt-2 font-mono">
-                            [ENCRYPTION: WINGDINGS] [STATUS: ACTIVE]
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Footer warning */}
-              <div className="text-center mt-16 space-y-2">
-                <p className="text-xs text-gray-600 font-mono">
-                  DOCUMENT CLASSIFICATION: TOP SECRET // COMPARTMENTALIZED
-                </p>
-                <p className="text-xs text-gray-700 font-mono">
-                  UNAUTHORIZED ACCESS WILL BE PROSECUTED TO THE FULLEST EXTENT
-                </p>
+              <h1 className="text-4xl md:text-6xl font-mono font-bold text-gray-300 tracking-tight">
+                CLASSIFIED
+              </h1>
+              <p className="text-lg md:text-xl text-gray-500 font-mono">
+                Research Division • Sector 7 • Level ███
+              </p>
+              <div className="text-sm text-red-500 font-mono mt-4">
+                ⚠ CLEARANCE LEVEL OMEGA REQUIRED ⚠
               </div>
             </div>
-          </main>
-        </div>
+
+            {/* Experiments */}
+            <div className="space-y-6">
+              {experiments.map((exp) => (
+                <div
+                  key={exp.number}
+                  className="border border-gray-800 bg-gray-900/30 backdrop-blur rounded p-4 md:p-6"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="font-mono text-gray-500 text-sm min-w-[100px]">
+                      ENTRY #{exp.number.toString().padStart(2, '0')}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-mono text-sm md:text-base leading-relaxed ${
+                        exp.redacted ? 'text-gray-700' : 'text-gray-400'
+                      }`}>
+                        {exp.text}
+                      </p>
+                      {exp.number === 17 && (
+                        <p className="text-xs text-gray-600 mt-2 font-mono">
+                          [ENCRYPTION: WINGDINGS] [STATUS: ACTIVE]
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer warning */}
+            <div className="text-center mt-16 space-y-2">
+              <p className="text-xs text-gray-600 font-mono">
+                DOCUMENT CLASSIFICATION: TOP SECRET // COMPARTMENTALIZED
+              </p>
+              <p className="text-xs text-gray-700 font-mono">
+                UNAUTHORIZED ACCESS WILL BE PROSECUTED TO THE FULLEST EXTENT
+              </p>
+            </div>
+          </div>
+        </main>
       </div>
     </>
   )
