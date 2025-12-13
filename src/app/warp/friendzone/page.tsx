@@ -125,6 +125,16 @@ export default function FriendzPage() {
         // Silently fail if table doesn't exist
       }
 
+      // Set friendzone_verified in profiles table
+      try {
+        await supabase
+          .from('profiles')
+          .update({ friendzone_verified: true })
+          .eq('id', user.id)
+      } catch (profileError) {
+        // Silently fail if column doesn't exist
+      }
+
       setIsAuthenticated(true)
       setSuccess('You are now worthy!')
     } catch (error) {
@@ -152,7 +162,7 @@ export default function FriendzPage() {
         setTracked(true)
       }
 
-      // Check if user is already authenticated (table may not exist)
+      // Check if user is already authenticated (check both methods)
       try {
         const { data: authData } = await supabase
           .from('friend_authentications')
@@ -160,7 +170,15 @@ export default function FriendzPage() {
           .eq('user_id', user.id)
           .single()
 
-        if (authData) {
+        // Also check friendzone_verified in profiles
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('friendzone_verified')
+          .eq('id', user.id)
+          .single()
+
+        // User is authenticated if they have either friend_authentications entry OR friendzone_verified = true
+        if (authData || (profileData?.friendzone_verified === true)) {
           setIsAuthenticated(true)
         }
       } catch (error) {

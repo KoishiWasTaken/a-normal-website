@@ -122,14 +122,24 @@ export default function ForTheWorthyPage() {
 
       setUser(user)
 
-      // Check if user is authenticated via friendzone
+      // Check if user is authenticated via friendzone (check both methods)
       const { data: authData } = await supabase
         .from('friend_authentications')
         .select('*')
         .eq('user_id', user.id)
         .single()
 
-      if (!authData) {
+      // Also check if user has friendzone_verified in profiles (for admin verification)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('friendzone_verified')
+        .eq('id', user.id)
+        .single()
+
+      // User is authenticated if they have either friend_authentications entry OR friendzone_verified = true
+      const isVerified = authData || (profileData?.friendzone_verified === true)
+
+      if (!isVerified) {
         // Not authenticated, redirect to forbidden
         router.push('/forbidden')
         return
