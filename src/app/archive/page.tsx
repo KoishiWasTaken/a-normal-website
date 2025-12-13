@@ -105,6 +105,7 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   '4O4': 'atypical',
   libraryofbabel: 'atypical',
   funfunfun: 'atypical',
+  puzzleplaza: 'atypical',
   beginningofthebeginning: 'bizarre',
   fortheworthy: 'bizarre',
   celestialinferno: 'bizarre',
@@ -138,6 +139,7 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   libraryofbabel: 105,  // Rare 404 redirect + clickable 4O4
   '4O4': 106,           // Rare 404 redirect (0.1%)
   funfunfun: 107,       // Rare homepage redirect (1/6666)
+  puzzleplaza: 108,     // 10-minute homepage timer
   // Bizarre (200-299)
   beginningofthebeginning: 200,  // Hidden text in End of the End
   fortheworthy: 201,              // Rare friend link on homepage
@@ -153,7 +155,8 @@ const pageSubjectiveDifficulty: Record<string, number> = {
 // Display name overrides for specific pages
 const pageDisplayNames: Record<string, string> = {
   celestialinferno: 'Inferno',
-  shanidev: 'Lord Saturn'
+  shanidev: 'Lord Saturn',
+  funfunfun: 'FUN'
 }
 
 const difficultyOrder: Record<DifficultyLevel, number> = {

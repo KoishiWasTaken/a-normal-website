@@ -10,6 +10,8 @@ export default function HomePage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFriendLink, setShowFriendLink] = useState(false)
+  const [showPuzzleLink, setShowPuzzleLink] = useState(false)
+  const [footerFading, setFooterFading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -21,6 +23,15 @@ export default function HomePage() {
 
     // 1/25 chance to show the friend link
     setShowFriendLink(Math.random() < 0.04)
+
+    // 10-minute timer to show puzzle plaza link
+    const puzzleTimer = setTimeout(() => {
+      setFooterFading(true)
+      setTimeout(() => {
+        setShowPuzzleLink(true)
+        setFooterFading(false)
+      }, 1000)
+    }, 10 * 60 * 1000) // 10 minutes
 
     // Track page discovery
     const trackDiscovery = async () => {
@@ -39,6 +50,8 @@ export default function HomePage() {
     }
 
     trackDiscovery()
+
+    return () => clearTimeout(puzzleTimer)
   }, [])
 
   if (loading) {
@@ -139,14 +152,26 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <p className="text-sm text-muted-foreground font-mono">
-              © 2025 a normal website. all rights reserved.{' '}
-              {showFriendLink ? (
-                <Link href="/fortheworthy" className="underline hover:text-primary transition-colors">
-                  reserved for your friend. probably.
+            <p
+              className={`text-sm text-muted-foreground font-mono transition-opacity duration-1000 ${
+                footerFading ? 'opacity-0' : 'opacity-100'
+              }`}
+            >
+              {showPuzzleLink ? (
+                <Link href="/puzzleplaza" className="underline hover:text-primary transition-colors">
+                  hey you. are you waiting for something?
                 </Link>
               ) : (
-                'probably.'
+                <>
+                  © 2025 a normal website. all rights reserved.{' '}
+                  {showFriendLink ? (
+                    <Link href="/fortheworthy" className="underline hover:text-primary transition-colors">
+                      reserved for your friend. probably.
+                    </Link>
+                  ) : (
+                    'probably.'
+                  )}
+                </>
               )}
             </p>
           </div>
