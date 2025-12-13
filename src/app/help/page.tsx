@@ -56,27 +56,26 @@ export default function HelpPage() {
   }, [router, supabase])
 
   useEffect(() => {
-    // Generate a sequence of random headlines
-    const generateSequence = () => {
-      const sequence = []
-      for (let i = 0; i < 10; i++) {
-        const randomIndex = Math.floor(Math.random() * headlines.length)
-        const headline = headlines[randomIndex]
-        sequence.push({
-          text: headline,
-          isLink: headline === "this hint actually takes you somewhere"
-        })
+    // Shuffle all headlines using Fisher-Yates algorithm
+    const shuffleHeadlines = () => {
+      const shuffled = [...headlines]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
       }
-      return sequence
+      return shuffled.map(headline => ({
+        text: headline,
+        isLink: headline === "this hint actually takes you somewhere"
+      }))
     }
 
-    // Initial sequence
-    setHeadlineSequence(generateSequence())
+    // Initial shuffle
+    setHeadlineSequence(shuffleHeadlines())
 
-    // Regenerate sequence every 50-80 seconds
+    // Reshuffle every 5 minutes (all phrases will be shown before reshuffling)
     const interval = setInterval(() => {
-      setHeadlineSequence(generateSequence())
-    }, Math.random() * 30000 + 50000)
+      setHeadlineSequence(shuffleHeadlines())
+    }, 300000) // 5 minutes
 
     return () => clearInterval(interval)
   }, [])
