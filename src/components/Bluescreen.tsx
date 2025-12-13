@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function Bluescreen() {
@@ -9,27 +9,15 @@ export default function Bluescreen() {
   const [soundPlayed, setSoundPlayed] = useState(false)
   const [percentage, setPercentage] = useState(0)
   const router = useRouter()
+  const incrementTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const specialTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Erratic percentage progression
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout
-
-    const incrementPercentage = () => {
+    const scheduleNext = () => {
       setPercentage(prev => {
-        // If we've reached 100%, redirect to homepage
-        if (prev >= 100) {
-          setTimeout(() => {
-            router.push('/')
-          }, 1000)
-          return 100
-        }
-
-        // If at 99%, pause for 2-3 seconds before going to 100
-        if (prev === 99) {
-          timeoutId = setTimeout(() => {
-            setPercentage(100)
-          }, 2500)
-          return 99
+        if (prev >= 99) {
+          return prev
         }
 
         // Erratic increment between 1-7%
@@ -38,20 +26,40 @@ export default function Bluescreen() {
 
         // Schedule next increment with random delay (200-800ms)
         const delay = Math.floor(Math.random() * 600) + 200
-        timeoutId = setTimeout(incrementPercentage, delay)
+        incrementTimeoutRef.current = setTimeout(scheduleNext, delay)
 
         return newValue
       })
     }
 
-    // Start the progression
-    const initialDelay = setTimeout(incrementPercentage, 500)
+    // Start the progression after a short delay
+    incrementTimeoutRef.current = setTimeout(scheduleNext, 500)
 
     return () => {
-      clearTimeout(initialDelay)
-      clearTimeout(timeoutId)
+      if (incrementTimeoutRef.current) {
+        clearTimeout(incrementTimeoutRef.current)
+      }
     }
-  }, [router])
+  }, [])
+
+  // Handle 99% pause and 100% redirect
+  useEffect(() => {
+    if (percentage === 99) {
+      specialTimeoutRef.current = setTimeout(() => {
+        setPercentage(100)
+      }, 2500)
+    } else if (percentage === 100) {
+      specialTimeoutRef.current = setTimeout(() => {
+        router.push('/')
+      }, 1000)
+    }
+
+    return () => {
+      if (specialTimeoutRef.current) {
+        clearTimeout(specialTimeoutRef.current)
+      }
+    }
+  }, [percentage, router])
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
