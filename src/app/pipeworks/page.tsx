@@ -29,6 +29,8 @@ const PIPE_COLORS = [
 
 const PIPE_WIDTH_MIN = 15
 const PIPE_WIDTH_MAX = 30
+const CHUNK_SIZE = 600 // Size of each chunk
+const PIPES_PER_CHUNK = 6 // Pipes generated per chunk
 
 export default function PipeworksPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -36,6 +38,7 @@ export default function PipeworksPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [pipes, setPipes] = useState<Pipe[]>([])
+  const [generatedChunks, setGeneratedChunks] = useState<Set<string>>(new Set())
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number | null>(null)
   const router = useRouter()
@@ -85,25 +88,87 @@ export default function PipeworksPage() {
     }
   }
 
-  // Generate initial pipes centered around viewport
-  useEffect(() => {
+  // Get chunk key from world position
+  const getChunkKey = (worldX: number, worldY: number): string => {
+    const chunkX = Math.floor(worldX / CHUNK_SIZE)
+    const chunkY = Math.floor(worldY / CHUNK_SIZE)
+    return `${chunkX},${chunkY}`
+  }
+
+  // Generate pipes for a specific chunk
+  const generateChunkPipes = (chunkX: number, chunkY: number): Pipe[] => {
+    const newPipes: Pipe[] = []
+
+    // Use chunk coordinates as seed for consistent generation
+    const chunkCenterX = chunkX * CHUNK_SIZE + CHUNK_SIZE / 2
+    const chunkCenterY = chunkY * CHUNK_SIZE + CHUNK_SIZE / 2
+
+    for (let i = 0; i < PIPES_PER_CHUNK; i++) {
+      const startX = chunkX * CHUNK_SIZE + Math.random() * CHUNK_SIZE
+      const startY = chunkY * CHUNK_SIZE + Math.random() * CHUNK_SIZE
+      newPipes.push(generatePipe(startX, startY))
+    }
+
+    return newPipes
+  }
+
+  // Generate chunks around current viewport
+  const generateVisibleChunks = () => {
     if (!canvasRef.current) return
 
     const canvas = canvasRef.current
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
 
-    const initialPipes: Pipe[] = []
-    const pipeCount = 50
+    // Calculate viewport bounds in world space
+    const viewLeft = -offset.x
+    const viewRight = -offset.x + canvas.width
+    const viewTop = -offset.y
+    const viewBottom = -offset.y + canvas.height
 
-    for (let i = 0; i < pipeCount; i++) {
-      const startX = centerX + (Math.random() - 0.5) * 1600
-      const startY = centerY + (Math.random() - 0.5) * 1200
-      initialPipes.push(generatePipe(startX, startY))
+    // Add buffer area around viewport (2 chunks in each direction)
+    const buffer = CHUNK_SIZE * 2
+    const worldLeft = viewLeft - buffer
+    const worldRight = viewRight + buffer
+    const worldTop = viewTop - buffer
+    const worldBottom = viewBottom + buffer
+
+    // Calculate chunk range to generate
+    const startChunkX = Math.floor(worldLeft / CHUNK_SIZE)
+    const endChunkX = Math.ceil(worldRight / CHUNK_SIZE)
+    const startChunkY = Math.floor(worldTop / CHUNK_SIZE)
+    const endChunkY = Math.ceil(worldBottom / CHUNK_SIZE)
+
+    const newPipes: Pipe[] = []
+    const newChunks = new Set(generatedChunks)
+
+    // Generate all chunks in viewport + buffer
+    for (let chunkX = startChunkX; chunkX <= endChunkX; chunkX++) {
+      for (let chunkY = startChunkY; chunkY <= endChunkY; chunkY++) {
+        const chunkKey = `${chunkX},${chunkY}`
+
+        if (!generatedChunks.has(chunkKey)) {
+          newChunks.add(chunkKey)
+          newPipes.push(...generateChunkPipes(chunkX, chunkY))
+        }
+      }
     }
 
-    setPipes(initialPipes)
+    if (newPipes.length > 0) {
+      setPipes(prev => [...prev, ...newPipes])
+      setGeneratedChunks(newChunks)
+    }
+  }
+
+  // Generate initial chunks
+  useEffect(() => {
+    if (canvasRef.current) {
+      generateVisibleChunks()
+    }
   }, [])
+
+  // Generate new chunks whenever offset changes
+  useEffect(() => {
+    generateVisibleChunks()
+  }, [offset])
 
   // Draw loop
   useEffect(() => {
@@ -205,30 +270,6 @@ export default function PipeworksPage() {
       }
     }
   }, [pipes, offset])
-
-  // Generate more pipes when dragging far
-  useEffect(() => {
-    if (!canvasRef.current || pipes.length === 0) return
-
-    const canvas = canvasRef.current
-    const distance = Math.sqrt(offset.x * offset.x + offset.y * offset.y)
-
-    // Generate more pipes if dragged more than 800px and have less than 200 pipes
-    if (distance > 800 && pipes.length < 200) {
-      const newPipes: Pipe[] = []
-      const pipeCount = 20
-
-      for (let i = 0; i < pipeCount; i++) {
-        const angle = Math.random() * Math.PI * 2
-        const dist = 600 + Math.random() * 400
-        const startX = canvas.width / 2 - offset.x + Math.cos(angle) * dist
-        const startY = canvas.height / 2 - offset.y + Math.sin(angle) * dist
-        newPipes.push(generatePipe(startX, startY))
-      }
-
-      setPipes(prev => [...prev, ...newPipes])
-    }
-  }, [offset, pipes.length])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
