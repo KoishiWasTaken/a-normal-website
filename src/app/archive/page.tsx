@@ -121,6 +121,7 @@ const pageDifficulties: Record<string, DifficultyLevel> = {
   yetdarker: 'bizarre',
   waterworld: 'bizarre',
   terminal: 'bizarre',
+  pipeworks: 'bizarre',
   eyeofthehurricane: 'cryptic'
 }
 
@@ -160,6 +161,7 @@ const pageSubjectiveDifficulty: Record<string, number> = {
   yetdarker: 205,                 // Puzzle Plaza lighting puzzle unlock
   waterworld: 206,                // Puzzle Plaza sliding puzzle unlock
   terminal: 207,                  // Hidden hint in /help page
+  pipeworks: 208,                 // Puzzle Plaza flow puzzle unlock
   // Cryptic (300-399)
   eyeofthehurricane: 300,         // Win chess against Deep Blue AI
   // Diabolical (400-499)

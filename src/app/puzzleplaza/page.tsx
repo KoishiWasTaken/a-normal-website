@@ -10,9 +10,29 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Lightbulb, Grid3x3, Lock, Zap } from 'lucide-react'
+import { Lightbulb, Grid3x3, Lock, Zap, Waypoints } from 'lucide-react'
 
-type PuzzleType = 'lighting' | 'sliding'
+type PuzzleType = 'lighting' | 'sliding' | 'flow'
+
+interface FlowNode {
+  row: number
+  col: number
+  color: string
+  pairId: number
+}
+
+interface FlowCell {
+  color: string | null
+  isNode: boolean
+  nodeColor?: string
+  pairId?: number
+}
+
+interface FlowConnection {
+  pairId: number
+  path: { row: number, col: number }[]
+  complete: boolean
+}
 
 export default function PuzzlePlazaPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
@@ -31,6 +51,18 @@ export default function PuzzlePlazaPage() {
   const [slidingBoard, setSlidingBoard] = useState<number[][]>([[]])
   const [emptyPos, setEmptyPos] = useState({ row: 0, col: 0 })
   const [slidingUnlocked, setSlidingUnlocked] = useState(false)
+
+  // Flow puzzle state
+  const [flowLevel, setFlowLevel] = useState(1)
+  const [flowBoard, setFlowBoard] = useState<FlowCell[][]>([[]])
+  const [flowNodes, setFlowNodes] = useState<FlowNode[]>([])
+  const [flowUnlocked, setFlowUnlocked] = useState(false)
+  const [flowConnections, setFlowConnections] = useState<Map<number, FlowConnection>>(new Map())
+  const [currentDrag, setCurrentDrag] = useState<{
+    pairId: number
+    path: { row: number, col: number }[]
+    color: string
+  } | null>(null)
 
   // Initialize lighting puzzle
   const initLightingPuzzle = (level: number) => {
@@ -74,6 +106,258 @@ export default function PuzzlePlazaPage() {
 
     setSlidingBoard(board)
     setEmptyPos({ row: emptyR, col: emptyC })
+  }
+
+  // Initialize flow puzzle with guaranteed solvable configuration
+  const initFlowPuzzle = (level: number) => {
+    const size = level === 1 ? 4 : level === 2 ? 6 : 8
+    const pairCount = level === 1 ? 3 : level === 2 ? 5 : 7
+
+    // Create empty board
+    const board: FlowCell[][] = Array(size).fill(null).map(() =>
+      Array(size).fill(null).map(() => ({ color: null, isNode: false }))
+    )
+
+    // Define color palette
+    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316']
+
+    // Generate solvable puzzle by creating paths first, then placing nodes at endpoints
+    const nodes: FlowNode[] = []
+    const usedCells = new Set<string>()
+    const usedPairs: {start: {row: number, col: number}, end: {row: number, col: number}}[] = []
+
+    // Helper: simple random walk pathfinder (not optimal, but ensures solvability)
+    function findPath(start: {row: number, col: number}, end: {row: number, col: number}, occupied: Set<string>): {row: number, col: number}[] | null {
+      // BFS for shortest path
+      const queue: {row: number, col: number, path: {row: number, col: number}[]}[] = []
+      const visited = new Set<string>()
+      queue.push({row: start.row, col: start.col, path: [{row: start.row, col: start.col}]})
+      visited.add(`${start.row},${start.col}`)
+      const dirs = [[-1,0],[1,0],[0,-1],[0,1]]
+      while (queue.length > 0) {
+        const {row, col, path} = queue.shift()!
+        if (row === end.row && col === end.col) return path
+        for (const [dr, dc] of dirs) {
+          const nr = row + dr, nc = col + dc
+          if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+            const key = `${nr},${nc}`
+            if (!visited.has(key) && (!occupied.has(key) || (nr === end.row && nc === end.col))) {
+              visited.add(key)
+              queue.push({row: nr, col: nc, path: [...path, {row: nr, col: nc}]})
+            }
+          }
+        }
+      }
+      return null
+    }
+
+    // Place pairs and paths
+    let attempts = 0
+    while (usedPairs.length < pairCount && attempts < 1000) {
+      attempts++
+      // Pick two random unused cells
+      let startRow, startCol, endRow, endCol
+      do {
+        startRow = Math.floor(Math.random() * size)
+        startCol = Math.floor(Math.random() * size)
+      } while (usedCells.has(`${startRow},${startCol}`))
+      do {
+        endRow = Math.floor(Math.random() * size)
+        endCol = Math.floor(Math.random() * size)
+      } while (
+        usedCells.has(`${endRow},${endCol}`) ||
+        (startRow === endRow && startCol === endCol)
+      )
+      // Try to find a path
+      const occupied = new Set(usedCells)
+      const path = findPath({row: startRow, col: startCol}, {row: endRow, col: endCol}, occupied)
+      if (path && path.length > 2) {
+        // Mark all path cells as used (except endpoints)
+        for (let i = 1; i < path.length - 1; i++) {
+          usedCells.add(`${path[i].row},${path[i].col}`)
+        }
+        usedCells.add(`${startRow},${startCol}`)
+        usedCells.add(`${endRow},${endCol}`)
+        usedPairs.push({start: {row: startRow, col: startCol}, end: {row: endRow, col: endCol}})
+        // Place nodes
+        const pairId = usedPairs.length - 1
+        const color = colors[pairId]
+        board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
+        board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
+        nodes.push({ row: startRow, col: startCol, color, pairId })
+        nodes.push({ row: endRow, col: endCol, color, pairId })
+      }
+    }
+    setFlowBoard(board)
+    setFlowNodes(nodes)
+    setFlowConnections(new Map())
+    setCurrentDrag(null)
+  }
+
+  // Flow puzzle interaction
+  const handleFlowMouseDown = (row: number, col: number) => {
+    const cell = flowBoard[row][col]
+
+    // Must start from a node
+    if (!cell.isNode || cell.pairId === undefined) return
+
+    const color = cell.nodeColor!
+    const pairId = cell.pairId
+
+    // If this node's pair is already connected, clear the connection
+    const existingConnection = flowConnections.get(pairId)
+    if (existingConnection) {
+      // Clear the path on the board
+      const newBoard = flowBoard.map(r => r.map(c => ({ ...c })))
+      for (const pos of existingConnection.path) {
+        if (!newBoard[pos.row][pos.col].isNode) {
+          newBoard[pos.row][pos.col].color = null
+        }
+      }
+      setFlowBoard(newBoard)
+
+      // Remove connection
+      const newConnections = new Map(flowConnections)
+      newConnections.delete(pairId)
+      setFlowConnections(newConnections)
+    }
+
+    // Start new drag
+    setCurrentDrag({
+      pairId,
+      path: [{ row, col }],
+      color
+    })
+  }
+
+  const handleFlowMouseEnter = (row: number, col: number) => {
+    if (!currentDrag) return
+
+    const cell = flowBoard[row][col]
+    const lastPos = currentDrag.path[currentDrag.path.length - 1]
+
+    // Check if adjacent to last position
+    const isAdjacent =
+      (Math.abs(row - lastPos.row) === 1 && col === lastPos.col) ||
+      (Math.abs(col - lastPos.col) === 1 && row === lastPos.row)
+
+    if (!isAdjacent) return
+
+    // Check if going backwards (removing from path)
+    const pathIndex = currentDrag.path.findIndex(p => p.row === row && p.col === col)
+    if (pathIndex !== -1 && pathIndex === currentDrag.path.length - 2) {
+      // Going back - remove last cell from path
+      const newPath = currentDrag.path.slice(0, -1)
+      setCurrentDrag({
+        ...currentDrag,
+        path: newPath
+      })
+
+      // Clear the cell
+      const newBoard = flowBoard.map(r => r.map(c => ({ ...c })))
+      newBoard[lastPos.row][lastPos.col].color = null
+      setFlowBoard(newBoard)
+      return
+    }
+
+    // Can't go through other colors' paths
+    if (cell.color && cell.color !== currentDrag.color) return
+
+    // Can't go through other nodes (except target node of same pair)
+    if (cell.isNode) {
+      if (cell.nodeColor !== currentDrag.color) return
+      if (cell.pairId !== currentDrag.pairId) return
+
+      // Reached the target node - complete the connection!
+      const newPath = [...currentDrag.path, { row, col }]
+
+      // Update board with path
+      const newBoard = flowBoard.map(r => r.map(c => ({ ...c })))
+      for (let i = 1; i < newPath.length - 1; i++) {
+        newBoard[newPath[i].row][newPath[i].col].color = currentDrag.color
+      }
+      setFlowBoard(newBoard)
+
+      // Save connection
+      const newConnections = new Map(flowConnections)
+      newConnections.set(currentDrag.pairId, {
+        pairId: currentDrag.pairId,
+        path: newPath,
+        complete: true
+      })
+      setFlowConnections(newConnections)
+
+      // Clear current drag
+      setCurrentDrag(null)
+
+      // Check if puzzle is complete
+      checkFlowComplete(newBoard, newConnections)
+      return
+    }
+
+    // Can't go to already occupied cells in current path
+    if (currentDrag.path.some(p => p.row === row && p.col === col)) return
+
+    // Add to path
+    const newPath = [...currentDrag.path, { row, col }]
+    setCurrentDrag({
+      ...currentDrag,
+      path: newPath
+    })
+
+    // Update board
+    const newBoard = flowBoard.map(r => r.map(c => ({ ...c })))
+    newBoard[row][col].color = currentDrag.color
+    setFlowBoard(newBoard)
+  }
+
+  const handleFlowMouseUp = () => {
+    // If drag didn't complete to target node, clear the incomplete path
+    if (currentDrag) {
+      const newBoard = flowBoard.map(r => r.map(c => ({ ...c })))
+      for (const pos of currentDrag.path) {
+        if (!newBoard[pos.row][pos.col].isNode) {
+          newBoard[pos.row][pos.col].color = null
+        }
+      }
+      setFlowBoard(newBoard)
+    }
+    setCurrentDrag(null)
+  }
+
+  const checkFlowComplete = (board: FlowCell[][], connections: Map<number, FlowConnection>) => {
+    const size = board.length
+    const pairCount = flowLevel === 1 ? 3 : flowLevel === 2 ? 5 : 7
+
+    // Check all pairs are connected
+    if (connections.size !== pairCount) return
+
+    // Check all connections are complete
+    for (const conn of connections.values()) {
+      if (!conn.complete) return
+    }
+
+    // Check ALL cells are covered (either node or path)
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (!board[i][j].isNode && !board[i][j].color) {
+          return // Found empty cell
+        }
+      }
+    }
+
+    // All conditions met - level complete!
+    setTimeout(() => {
+      if (flowLevel < 3) {
+        setFlowLevel(flowLevel + 1)
+        initFlowPuzzle(flowLevel + 1)
+      } else {
+        if (user) {
+          savePuzzleProgress('flow', true)
+        }
+        setFlowUnlocked(true)
+      }
+    }, 500)
   }
 
   // Toggle light and adjacent lights
@@ -183,11 +467,12 @@ export default function PuzzlePlazaPage() {
         data.forEach(progress => {
           if (progress.puzzle_type === 'lighting' && progress.unlocked) {
             setLightingUnlocked(true)
-            // Always start at level 1, don't restore level
           }
           if (progress.puzzle_type === 'sliding' && progress.unlocked) {
             setSlidingUnlocked(true)
-            // Always start at level 1, don't restore level
+          }
+          if (progress.puzzle_type === 'flow' && progress.unlocked) {
+            setFlowUnlocked(true)
           }
         })
       }
@@ -209,7 +494,7 @@ export default function PuzzlePlazaPage() {
 
       // Track page discovery
       if (!tracked) {
-      await recordPageDiscovery(supabase, user.id, 'puzzleplaza')
+        await recordPageDiscovery(supabase, user.id, 'puzzleplaza')
         setTracked(true)
       }
 
@@ -220,15 +505,23 @@ export default function PuzzlePlazaPage() {
     }
 
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, supabase, tracked])
 
   useEffect(() => {
     initLightingPuzzle(lightingLevel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightingLevel])
 
   useEffect(() => {
     initSlidingPuzzle(slidingLevel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slidingLevel])
+
+  useEffect(() => {
+    initFlowPuzzle(flowLevel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowLevel])
 
   if (loading) {
     return (
@@ -294,9 +587,9 @@ export default function PuzzlePlazaPage() {
                 <Grid3x3 className="mr-2" size={16} />
                 Sliding
               </TabsTrigger>
-              <TabsTrigger value="unavailable1" disabled className="font-mono font-bold opacity-50">
-                <Lock className="mr-2" size={16} />
-                Unavailable
+              <TabsTrigger value="flow" className="font-mono font-bold data-[state=active]:bg-blue-400 data-[state=active]:text-white">
+                <Waypoints className="mr-2" size={16} />
+                Flow
               </TabsTrigger>
               <TabsTrigger value="unavailable2" disabled className="font-mono font-bold opacity-50">
                 <Lock className="mr-2" size={16} />
@@ -414,6 +707,82 @@ export default function PuzzlePlazaPage() {
                       </Button>
                     </Link>
                     {slidingUnlocked && (
+                      <p className="text-sm font-mono text-green-600 mt-2">
+                        ✓ Unlocked!
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Flow Puzzle */}
+            <TabsContent value="flow" className="mt-6">
+              <Card className="border-4 border-blue-400 bg-white/90 backdrop-blur-lg shadow-2xl">
+                <CardHeader>
+                  <CardTitle className="font-mono text-2xl text-purple-900 flex items-center gap-2">
+                    <Waypoints className="text-blue-500" />
+                    Flow Puzzle - Level {flowLevel}
+                  </CardTitle>
+                  <CardDescription className="font-mono text-purple-700 font-semibold">
+                    {flowUnlocked
+                      ? '✅ All levels complete! Advance button unlocked!'
+                      : 'Connect matching colored nodes! Fill every cell without crossing paths.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col items-center gap-4">
+                    <div
+                      className="inline-grid gap-1 p-4 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-lg border-4 border-blue-400"
+                      onMouseUp={handleFlowMouseUp}
+                      onMouseLeave={handleFlowMouseUp}
+                      style={{
+                        gridTemplateColumns: `repeat(${flowBoard.length}, minmax(0, 1fr))`,
+                        userSelect: 'none'
+                      }}
+                    >
+                      {flowBoard.map((row, i) => (
+                        row.map((cell, j) => (
+                          <div
+                            key={`${i}-${j}`}
+                            onMouseDown={() => handleFlowMouseDown(i, j)}
+                            onMouseEnter={() => handleFlowMouseEnter(i, j)}
+                            className={`w-10 h-10 md:w-12 md:h-12 rounded-md border-2 transition-all duration-100 cursor-pointer ${
+                              cell.isNode ? 'border-gray-800' : 'border-gray-300'
+                            }`}
+                            style={{
+                              backgroundColor: cell.isNode ? cell.nodeColor : (cell.color || '#f3f4f6'),
+                              boxShadow: cell.isNode ? '0 4px 6px rgba(0,0,0,0.3)' : 'none'
+                            }}
+                          >
+                            {cell.isNode && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <div
+                                  className="w-5 h-5 md:w-6 md:h-6 rounded-full border-4 border-white"
+                                  style={{ backgroundColor: cell.nodeColor }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ))}
+                    </div>
+                    <p className="text-sm font-mono text-purple-600">
+                      Grid Size: {flowBoard.length}x{flowBoard.length} | Level {flowLevel}/3
+                    </p>
+                  </div>
+
+                  {/* Always show Advance button */}
+                  <div className="text-center pt-4 border-t border-blue-300">
+                    <Link href="/pipeworks">
+                      <Button
+                        disabled={!flowUnlocked}
+                        className="font-mono text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-6 px-8 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {flowUnlocked ? 'Advance →' : '🔒 Complete Level 3 to Unlock'}
+                      </Button>
+                    </Link>
+                    {flowUnlocked && (
                       <p className="text-sm font-mono text-green-600 mt-2">
                         ✓ Unlocked!
                       </p>
