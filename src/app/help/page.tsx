@@ -82,7 +82,7 @@ export default function HelpPage() {
 
   const handleHeadlineClick = (isLink: boolean) => {
     if (isLink) {
-      router.push('/terminal')
+      router.push('/terminal/linux')
     }
   }
 

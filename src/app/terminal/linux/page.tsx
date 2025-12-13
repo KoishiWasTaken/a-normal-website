@@ -66,23 +66,29 @@ export default function TerminalPage() {
     // Data recovery command
     if (command === 'tar -xvpzf /backup/page.tsx -C /src/app/zlepuzazapl') {
       if (user) {
-        // Check if already recovered
-        const { data: profile } = await supabase
+        // Check if already recovered - force fresh query with no cache
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('data_recovered')
           .eq('user_id', user.id)
-          .single()
+          .maybeSingle()
 
-        if (profile?.data_recovered) {
-          newLines.push({ type: 'output', content: 'Data has already been recovered.' })
+        if (error) {
+          newLines.push({ type: 'output', content: 'error: could not verify recovery status.' })
+        } else if (profile && profile.data_recovered === true) {
+          newLines.push({ type: 'output', content: 'data has already been recovered.' })
         } else {
           // Set data_recovered to true
-          await supabase
+          const { error: updateError } = await supabase
             .from('profiles')
             .update({ data_recovered: true })
             .eq('user_id', user.id)
 
-          newLines.push({ type: 'output', content: 'Data successfully recovered.' })
+          if (updateError) {
+            newLines.push({ type: 'output', content: 'error: recovery failed.' })
+          } else {
+            newLines.push({ type: 'output', content: 'data successfully recovered.' })
+          }
         }
       }
     } else {
