@@ -90,7 +90,7 @@ export default function SignUpPage() {
         .eq('id', data.user.id)
 
       if (profileError) {
-        console.error('Error setting username:', profileError)
+        // Silently continue - username will be null
       }
     }
 

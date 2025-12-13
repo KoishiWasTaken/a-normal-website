@@ -111,7 +111,7 @@ export default function HurricanePage() {
       })
       setWeatherLoading(false)
     } catch (error) {
-      console.error('Weather fetch error:', error)
+      // Silently fail
       // Fallback weather data
       setWeather({
         location: 'Unknown Location',

@@ -52,15 +52,13 @@ export default function DeepBluePage() {
   useEffect(() => {
     const initStockfish = async () => {
       try {
-        console.log('🤖 Initializing Stockfish engine...')
         // Import pure JS version (not WASM) to avoid Node.js fs dependency
         const StockfishModule = await import('stockfish.js/stockfish.js')
         const Stockfish = StockfishModule.default || StockfishModule
         const sf = typeof Stockfish === 'function' ? Stockfish() : Stockfish
 
-        sf.onmessage = (event: any) => {
-          const message = event.data || event
-          console.log('🐟 Stockfish:', message)
+        sf.onmessage = () => {
+          // Silently process Stockfish messages
         }
 
         // Configure engine for maximum strength
@@ -70,9 +68,8 @@ export default function DeepBluePage() {
         sf.postMessage('isready')
 
         stockfishRef.current = sf
-        console.log('✅ Stockfish initialized (Skill Level 20 - Maximum Strength)')
       } catch (error) {
-        console.error('❌ Failed to initialize Stockfish:', error)
+        // Silently fail
       }
     }
 
@@ -84,21 +81,6 @@ export default function DeepBluePage() {
       }
     }
   }, [])
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🎮 DeepBlue component mounted')
-    console.log('📊 Initial state:', {
-      position,
-      gameOver,
-      turn: game.turn(),
-      isDraggable: !gameOver && game.turn() === 'w'
-    })
-  }, [])
-
-  useEffect(() => {
-    console.log('🔄 Position changed:', position)
-  }, [position])
 
   useEffect(() => {
     const initGame = async () => {
@@ -191,25 +173,13 @@ export default function DeepBluePage() {
 
   // Stockfish AI - much stronger than heuristic
   const makeAiMove = useCallback((currentGame: Chess) => {
-    console.log('🤖 Stockfish analyzing position:', currentGame.fen())
-
-    if (gameOver) {
-      console.log('❌ AI: Game is over')
-      return
-    }
-
-    if (currentGame.turn() !== 'b') {
-      console.log('❌ AI: Not black\'s turn')
-      return
-    }
+    if (gameOver) return
+    if (currentGame.turn() !== 'b') return
 
     const possibleMoves = currentGame.moves({ verbose: true })
-    console.log('🤖 Stockfish has', possibleMoves.length, 'possible moves')
-
     if (possibleMoves.length === 0) return
 
     if (!stockfishRef.current) {
-      console.log('⚠️ Stockfish not ready, using fallback AI')
       // Fallback: pick a random move
       const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
       const gameCopy = new Chess(currentGame.fen())
@@ -231,7 +201,6 @@ export default function DeepBluePage() {
         stockfishRef.current.onmessage = null // Remove listener
 
         const uciMove = message.split(' ')[1]
-        console.log('🐟 Stockfish recommends:', uciMove)
 
         try {
           const gameCopy = new Chess(currentGame.fen())
@@ -243,17 +212,14 @@ export default function DeepBluePage() {
           const move = gameCopy.move({ from, to, promotion })
 
           if (move) {
-            console.log('✅ Stockfish move:', move.san, `(${move.from}→${move.to})`)
             setGame(gameCopy)
             setPosition(gameCopy.fen())
             setAiThinking(false)
             checkGameStatus(gameCopy)
           } else {
-            console.error('❌ Invalid move from Stockfish:', uciMove)
             setAiThinking(false)
           }
         } catch (error) {
-          console.error('❌ Error processing Stockfish move:', error)
           setAiThinking(false)
         }
       }
@@ -271,11 +237,8 @@ export default function DeepBluePage() {
 
   // Handle piece drop
   const onDrop = (sourceSquare: string, targetSquare: string) => {
-    console.log('🎯 onDrop CALLED!', { sourceSquare, targetSquare, gameOver, turn: game.turn() })
-
     // Don't allow moves if game is over or not player's turn
     if (gameOver || game.turn() !== 'w') {
-      console.log('❌ Move rejected - game over or not player turn')
       return false
     }
 
@@ -288,16 +251,12 @@ export default function DeepBluePage() {
         promotion: 'q' // Always promote to queen
       })
 
-      console.log('♟️ Move result:', move)
-
       // If move is illegal, chess.js returns null
       if (move === null) {
-        console.log('❌ Illegal move')
         return false
       }
 
       // Move is legal - update state
-      console.log('✅ Valid move! Updating state')
       setGame(gameCopy)
       setPosition(gameCopy.fen())
 
@@ -307,11 +266,9 @@ export default function DeepBluePage() {
       }
 
       // Queue AI move after a short delay, passing the updated game state
-      console.log('🤖 Queuing AI move with updated position')
       setTimeout(() => makeAiMove(gameCopy), 300)
       return true
     } catch (error) {
-      console.error('💥 Move error:', error)
       return false
     }
   }

@@ -56,7 +56,6 @@ export default function FriendzPage() {
         })
 
       if (error) {
-        console.error('Error saving friend code:', error)
         setError('Failed to generate code. Please try again.')
       } else {
         setFriendCode(newCode)
@@ -64,7 +63,6 @@ export default function FriendzPage() {
         setTimeout(() => setSuccess(null), 3000)
       }
     } catch (error) {
-      console.error('Error generating friend code:', error)
       setError('Failed to generate code. Please try again.')
     }
   }
@@ -111,7 +109,6 @@ export default function FriendzPage() {
         .eq('code', inputCode.trim())
 
       if (updateError) {
-        console.error('Error updating friend code:', updateError)
         setError('Failed to use code. Please try again.')
         return
       }
@@ -126,13 +123,11 @@ export default function FriendzPage() {
           })
       } catch (authError) {
         // Silently fail if table doesn't exist
-        console.log('Friend authentication tracking unavailable')
       }
 
       setIsAuthenticated(true)
       setSuccess('You are now worthy!')
     } catch (error) {
-      console.error('Error submitting friend code:', error)
       setError('Failed to process code. Please try again.')
     }
   }
@@ -170,7 +165,7 @@ export default function FriendzPage() {
         }
       } catch (error) {
         // Silently fail if table doesn't exist
-        console.log('Friend authentication check unavailable')
+        // Silently fail
       }
 
       // Load user's friend code if exists
@@ -200,7 +195,7 @@ export default function FriendzPage() {
           }
         }
       } catch (error) {
-        console.error('Error loading friend code:', error)
+        // Silently fail
         // Silently fail - user can generate a new code manually
       }
 

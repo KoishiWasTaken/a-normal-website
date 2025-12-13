@@ -66,7 +66,7 @@ export default function ForTheWorthyPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error loading comments:', error)
+      // Silently fail
     } else {
       setComments(data || [])
     }
@@ -88,7 +88,7 @@ export default function ForTheWorthyPage() {
       })
 
     if (insertError) {
-      console.error('Error posting comment:', insertError)
+      // Silently fail
       setError('Failed to post comment. Please try again.')
     } else {
       setSuccess('Comment posted!')

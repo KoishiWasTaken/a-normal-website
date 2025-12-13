@@ -59,7 +59,6 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
   const ranks = [8, 7, 6, 5, 4, 3, 2, 1]
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, square: string) => {
-    console.log('🔵 DRAG START:', square, 'isDraggable:', isDraggable)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', square)
     setDraggedFrom(square)
@@ -85,17 +84,14 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
     e.stopPropagation()
 
     const sourceSquare = e.dataTransfer.getData('text/plain')
-    console.log('🎯 DROP:', { from: sourceSquare, to: targetSquare })
 
     if (!sourceSquare) {
-      console.log('❌ No source square')
       setDraggedFrom(null)
       setDraggedOver(null)
       return
     }
 
     const moveSuccessful = onPieceDrop(sourceSquare, targetSquare)
-    console.log(moveSuccessful ? '✅ Move accepted' : '❌ Move rejected')
 
     setDraggedFrom(null)
     setDraggedOver(null)
@@ -103,7 +99,6 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
 
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
-    console.log('🔴 DRAG END')
     setDraggedFrom(null)
     setDraggedOver(null)
   }
@@ -140,7 +135,6 @@ export default function CustomChessboard({ position, onPieceDrop, isDraggable }:
                     onDragStart={(e) => {
                       if (!canDrag) {
                         e.preventDefault()
-                        console.log('❌ Piece not draggable:', square)
                         return false
                       }
                       handleDragStart(e, square)

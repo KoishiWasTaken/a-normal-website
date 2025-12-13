@@ -22,8 +22,6 @@ export default function SignInPage() {
     setError(null)
     setLoading(true)
 
-    console.log('🔐 Attempting sign in...')
-
     let email = emailOrUsername
 
     // Check if input is a username (not an email)
@@ -49,24 +47,18 @@ export default function SignInPage() {
       password,
     })
 
-    console.log('Sign in response:', { data, error: signInError })
-
     setLoading(false)
 
     if (signInError) {
-      console.error('❌ Sign in error:', signInError)
       setError(signInError.message)
     } else if (data.user) {
       // Check if email is verified
       if (!data.user.email_confirmed_at) {
-        console.log('❌ Email not verified')
         await supabase.auth.signOut()
         setError('Please verify your email before signing in. Check your inbox for the verification link.')
         return
       }
 
-      console.log('✅ Sign in successful! User:', data.user.email)
-      console.log('Session:', data.session)
       router.push('/')
       router.refresh()
     }

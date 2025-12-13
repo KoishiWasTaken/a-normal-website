@@ -24,30 +24,17 @@ export default function HomePage() {
 
     // Track page discovery
     const trackDiscovery = async () => {
-      console.log('🔍 Checking authentication...')
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-      console.log('👤 User:', user ? `Logged in as ${user.email}` : 'Not logged in')
-      if (userError) console.error('❌ Auth error:', userError)
+      const { data: { user } } = await supabase.auth.getUser()
 
       setUser(user)
       setLoading(false)
 
       if (user) {
-        console.log('📊 Attempting to track homepage discovery...')
         // Record homepage discovery
-        const { data, error } = await supabase.rpc('record_page_discovery', {
+        await supabase.rpc('record_page_discovery', {
           p_user_id: user.id,
           p_page_key: 'homepage'
         })
-
-        if (error) {
-          console.error('❌ Discovery tracking error:', error)
-        } else if (data?.success) {
-          console.log('✅ Page discovered!', data)
-        } else {
-          console.log('ℹ️ Discovery result:', data)
-        }
       }
     }
 
