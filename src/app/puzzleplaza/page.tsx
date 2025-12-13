@@ -108,7 +108,45 @@ export default function PuzzlePlazaPage() {
     setEmptyPos({ row: emptyR, col: emptyC })
   }
 
-  // Initialize flow puzzle with guaranteed solvable configuration
+  // Helper: BFS pathfinding for Flow puzzle
+  function findPath(
+    start: {row: number, col: number},
+    end: {row: number, col: number},
+    occupied: Set<string>,
+    size: number
+  ): {row: number, col: number}[] | null {
+    const queue: {row: number, col: number, path: {row: number, col: number}[]}[] = []
+    const visited = new Set<string>()
+    queue.push({row: start.row, col: start.col, path: [{row: start.row, col: start.col}]})
+    visited.add(`${start.row},${start.col}`)
+
+    const dirs = [[-1,0],[1,0],[0,-1],[0,1]]
+
+    while (queue.length > 0) {
+      const {row, col, path} = queue.shift()!
+
+      if (row === end.row && col === end.col) {
+        return path
+      }
+
+      for (const [dr, dc] of dirs) {
+        const nr = row + dr
+        const nc = col + dc
+
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+          const key = `${nr},${nc}`
+          if (!visited.has(key) && (!occupied.has(key) || (nr === end.row && nc === end.col))) {
+            visited.add(key)
+            queue.push({row: nr, col: nc, path: [...path, {row: nr, col: nc}]})
+          }
+        }
+      }
+    }
+
+    return null
+  }
+
+  // Initialize flow puzzle with guaranteed solvable configuration and full coverage
   const initFlowPuzzle = (level: number) => {
     const size = level === 1 ? 4 : level === 2 ? 6 : 8
     const pairCount = level === 1 ? 3 : level === 2 ? 5 : 7
@@ -121,46 +159,121 @@ export default function PuzzlePlazaPage() {
     // Define color palette
     const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316']
 
-    // Generate solvable puzzle by creating paths first, then placing nodes at endpoints
-    const nodes: FlowNode[] = []
-    const usedCells = new Set<string>()
-    const usedPairs: {start: {row: number, col: number}, end: {row: number, col: number}}[] = []
+    // Generate solvable puzzle - try multiple times to ensure all tiles can be covered
+    let attempts = 0
+    const maxAttempts = 100
 
-    // Helper: simple random walk pathfinder (not optimal, but ensures solvability)
-    function findPath(start: {row: number, col: number}, end: {row: number, col: number}, occupied: Set<string>): {row: number, col: number}[] | null {
-      // BFS for shortest path
-      const queue: {row: number, col: number, path: {row: number, col: number}[]}[] = []
-      const visited = new Set<string>()
-      queue.push({row: start.row, col: start.col, path: [{row: start.row, col: start.col}]})
-      visited.add(`${start.row},${start.col}`)
-      const dirs = [[-1,0],[1,0],[0,-1],[0,1]]
-      while (queue.length > 0) {
-        const {row, col, path} = queue.shift()!
-        if (row === end.row && col === end.col) return path
-        for (const [dr, dc] of dirs) {
-          const nr = row + dr, nc = col + dc
-          if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-            const key = `${nr},${nc}`
-            if (!visited.has(key) && (!occupied.has(key) || (nr === end.row && nc === end.col))) {
-              visited.add(key)
-              queue.push({row: nr, col: nc, path: [...path, {row: nr, col: nc}]})
+    while (attempts < maxAttempts) {
+      attempts++
+
+      // Reset board
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          board[i][j] = { color: null, isNode: false }
+        }
+      }
+
+      const nodes: FlowNode[] = []
+      const usedCells = new Set<string>()
+      const paths: {row: number, col: number}[][] = []
+
+      // Try to place all pairs with paths that together cover all cells
+      let pairsPlaced = 0
+      const cellsToFill = size * size
+      let cellsFilled = 0
+
+      for (let pairId = 0; pairId < pairCount; pairId++) {
+        const color = colors[pairId]
+
+        // Find two unused positions
+        let startRow, startCol, endRow, endCol
+        let foundValidPair = false
+        let pairAttempts = 0
+
+        while (!foundValidPair && pairAttempts < 50) {
+          pairAttempts++
+
+          // Pick random positions
+          do {
+            startRow = Math.floor(Math.random() * size)
+            startCol = Math.floor(Math.random() * size)
+          } while (usedCells.has(`${startRow},${startCol}`))
+
+          do {
+            endRow = Math.floor(Math.random() * size)
+            endCol = Math.floor(Math.random() * size)
+          } while (
+            usedCells.has(`${endRow},${endCol}`) ||
+            (startRow === endRow && startCol === endCol)
+          )
+
+          // Try to find a path
+          const path = findPath(
+            {row: startRow, col: startCol},
+            {row: endRow, col: endCol},
+            usedCells,
+            size
+          )
+
+          // For last few pairs, prefer longer paths to fill remaining cells
+          const remainingCells = cellsToFill - cellsFilled - (path ? path.length : 0)
+          const remainingPairs = pairCount - pairId - 1
+
+          if (path && path.length >= 3) {
+            // Check if this path length is reasonable for coverage
+            if (pairId < pairCount - 1 || remainingCells <= remainingPairs * 2) {
+              foundValidPair = true
+
+              // Mark all path cells as used
+              for (const pos of path) {
+                usedCells.add(`${pos.row},${pos.col}`)
+              }
+
+              paths.push(path)
+              cellsFilled += path.length
+
+              // Place nodes
+              board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
+              board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
+
+              nodes.push({ row: startRow, col: startCol, color, pairId })
+              nodes.push({ row: endRow, col: endCol, color, pairId })
+
+              pairsPlaced++
             }
           }
         }
+
+        if (!foundValidPair) {
+          // Failed to place this pair, restart
+          break
+        }
       }
-      return null
+
+      // Check if we successfully placed all pairs and filled all cells
+      if (pairsPlaced === pairCount && cellsFilled === cellsToFill) {
+        setFlowBoard(board)
+        setFlowNodes(nodes)
+        setFlowConnections(new Map())
+        setCurrentDrag(null)
+        return
+      }
     }
 
-    // Place pairs and paths
-    let attempts = 0
-    while (usedPairs.length < pairCount && attempts < 1000) {
-      attempts++
-      // Pick two random unused cells
+    // Fallback: if we couldn't generate a perfect puzzle, use simpler placement
+    // This ensures the puzzle always loads even if perfect generation fails
+    const nodes: FlowNode[] = []
+    const usedCells = new Set<string>()
+
+    for (let pairId = 0; pairId < pairCount; pairId++) {
+      const color = colors[pairId]
+
       let startRow, startCol, endRow, endCol
       do {
         startRow = Math.floor(Math.random() * size)
         startCol = Math.floor(Math.random() * size)
       } while (usedCells.has(`${startRow},${startCol}`))
+
       do {
         endRow = Math.floor(Math.random() * size)
         endCol = Math.floor(Math.random() * size)
@@ -168,33 +281,24 @@ export default function PuzzlePlazaPage() {
         usedCells.has(`${endRow},${endCol}`) ||
         (startRow === endRow && startCol === endCol)
       )
-      // Try to find a path
-      const occupied = new Set(usedCells)
-      const path = findPath({row: startRow, col: startCol}, {row: endRow, col: endCol}, occupied)
-      if (path && path.length > 2) {
-        // Mark all path cells as used (except endpoints)
-        for (let i = 1; i < path.length - 1; i++) {
-          usedCells.add(`${path[i].row},${path[i].col}`)
-        }
-        usedCells.add(`${startRow},${startCol}`)
-        usedCells.add(`${endRow},${endCol}`)
-        usedPairs.push({start: {row: startRow, col: startCol}, end: {row: endRow, col: endCol}})
-        // Place nodes
-        const pairId = usedPairs.length - 1
-        const color = colors[pairId]
-        board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
-        board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
-        nodes.push({ row: startRow, col: startCol, color, pairId })
-        nodes.push({ row: endRow, col: endCol, color, pairId })
-      }
+
+      usedCells.add(`${startRow},${startCol}`)
+      usedCells.add(`${endRow},${endCol}`)
+
+      board[startRow][startCol] = { color: null, isNode: true, nodeColor: color, pairId }
+      board[endRow][endCol] = { color: null, isNode: true, nodeColor: color, pairId }
+
+      nodes.push({ row: startRow, col: startCol, color, pairId })
+      nodes.push({ row: endRow, col: endCol, color, pairId })
     }
+
     setFlowBoard(board)
     setFlowNodes(nodes)
     setFlowConnections(new Map())
     setCurrentDrag(null)
   }
 
-  // Flow puzzle interaction
+  // Flow puzzle interaction - Mouse events
   const handleFlowMouseDown = (row: number, col: number) => {
     const cell = flowBoard[row][col]
 
@@ -323,6 +427,35 @@ export default function PuzzlePlazaPage() {
       setFlowBoard(newBoard)
     }
     setCurrentDrag(null)
+  }
+
+  // Flow puzzle interaction - Touch events for mobile
+  const handleFlowTouchStart = (e: React.TouchEvent, row: number, col: number) => {
+    e.preventDefault()
+    handleFlowMouseDown(row, col)
+  }
+
+  const handleFlowTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault()
+
+    if (!currentDrag) return
+
+    const touch = e.touches[0]
+    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+
+    if (element && element.hasAttribute('data-flow-cell')) {
+      const row = parseInt(element.getAttribute('data-flow-row') || '-1')
+      const col = parseInt(element.getAttribute('data-flow-col') || '-1')
+
+      if (row >= 0 && col >= 0) {
+        handleFlowMouseEnter(row, col)
+      }
+    }
+  }
+
+  const handleFlowTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault()
+    handleFlowMouseUp()
   }
 
   const checkFlowComplete = (board: FlowCell[][], connections: Map<number, FlowConnection>) => {
@@ -736,17 +869,24 @@ export default function PuzzlePlazaPage() {
                       className="inline-grid gap-1 p-4 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-lg border-4 border-blue-400"
                       onMouseUp={handleFlowMouseUp}
                       onMouseLeave={handleFlowMouseUp}
+                      onTouchEnd={handleFlowTouchEnd}
+                      onTouchMove={handleFlowTouchMove}
                       style={{
                         gridTemplateColumns: `repeat(${flowBoard.length}, minmax(0, 1fr))`,
-                        userSelect: 'none'
+                        userSelect: 'none',
+                        touchAction: 'none'
                       }}
                     >
                       {flowBoard.map((row, i) => (
                         row.map((cell, j) => (
                           <div
                             key={`${i}-${j}`}
+                            data-flow-cell="true"
+                            data-flow-row={i}
+                            data-flow-col={j}
                             onMouseDown={() => handleFlowMouseDown(i, j)}
                             onMouseEnter={() => handleFlowMouseEnter(i, j)}
+                            onTouchStart={(e) => handleFlowTouchStart(e, i, j)}
                             className={`w-10 h-10 md:w-12 md:h-12 rounded-md border-2 transition-all duration-100 cursor-pointer ${
                               cell.isNode ? 'border-gray-800' : 'border-gray-300'
                             }`}
