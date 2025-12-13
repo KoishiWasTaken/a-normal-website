@@ -28,6 +28,10 @@ interface Discovery {
   discovery_number: number | null
   page: PageInfo
   total_discoverers?: number
+  first_pioneer?: {
+    username: string
+    user_id: string
+  }
 }
 
 interface AllPagesEntry extends PageInfo {
@@ -241,6 +245,25 @@ export default function IndexPage() {
 
       const statsMap = new Map(statsData?.map((s) => [s.page_id, s.unique_discoverers]))
 
+      // Get first discoverer (pioneer) for user's discovered pages
+      const discoveredPageIds = discoveryData?.map((d: any) => d.page_id) || []
+      const { data: pioneersData } = await supabase
+        .from('page_discoveries')
+        .select(`
+          page_id,
+          user_id,
+          profiles!inner(username)
+        `)
+        .eq('discovery_number', 1)
+        .in('page_id', discoveredPageIds)
+
+      const pioneersMap = new Map(
+        pioneersData?.map((p: any) => [
+          p.page_id,
+          { username: p.profiles.username, user_id: p.user_id }
+        ])
+      )
+
       // Combine all pages with discovery status
       const enrichedPages: AllPagesEntry[] = allPagesData.map((page) => {
         const discovery = discoveryData?.find((d: any) => d.page_id === page.id)
@@ -253,7 +276,8 @@ export default function IndexPage() {
               discovered_at: discovery.discovered_at,
               discovery_number: discovery.discovery_number,
               page: Array.isArray(discovery.pages) ? discovery.pages[0] : discovery.pages,
-              total_discoverers: statsMap.get(page.id) || 0
+              total_discoverers: statsMap.get(page.id) || 0,
+              first_pioneer: pioneersMap.get(page.id)
             }
           }
         }
@@ -587,6 +611,20 @@ export default function IndexPage() {
                                 <span className="text-xs font-mono text-primary">
                                   ★ first discovery
                                 </span>
+                              </div>
+                            )}
+
+                            {selectedPage.discovery.first_pioneer && (
+                              <div className="pt-3 border-t border-border/50">
+                                <div className="text-xs text-muted-foreground font-mono mb-1">
+                                  pioneer
+                                </div>
+                                <Link
+                                  href={`/profile/${selectedPage.discovery.first_pioneer.username}`}
+                                  className="text-sm text-primary font-mono hover:underline"
+                                >
+                                  @{selectedPage.discovery.first_pioneer.username}
+                                </Link>
                               </div>
                             )}
                           </div>
