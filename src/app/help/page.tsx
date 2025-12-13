@@ -6,8 +6,6 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { recordPageDiscovery } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import MobileNav from '@/components/MobileNav'
 
 const headlines = [
   "you can find the homepage at https://anormalwebsite.xyz/",
@@ -70,10 +68,10 @@ export default function HelpPage() {
     // Initial headline
     pickRandomHeadline()
 
-    // Change headline every 8-15 seconds (random interval for variety)
+    // Change headline every 5-8 seconds
     const interval = setInterval(() => {
       pickRandomHeadline()
-    }, Math.random() * 7000 + 8000) // 8-15 seconds
+    }, Math.random() * 3000 + 5000) // 5-8 seconds
 
     return () => clearInterval(interval)
   }, [])
@@ -92,33 +90,21 @@ export default function HelpPage() {
           className={`whitespace-nowrap font-mono text-sm text-muted-foreground animate-scroll-left ${isTerminalHint ? 'cursor-pointer' : ''}`}
           onClick={handleHeadlineClick}
         >
-          {/* Create large gaps by repeating spaces */}
-          {currentHeadline}
-          {'                                                                                                    '}
-          {currentHeadline}
-          {'                                                                                                    '}
-          {currentHeadline}
+          {/* Create large gaps by repeating with spacing */}
+          <span className="inline-block">{currentHeadline}</span>
+          <span className="inline-block px-32">•••</span>
+          <span className="inline-block">{currentHeadline}</span>
+          <span className="inline-block px-32">•••</span>
+          <span className="inline-block">{currentHeadline}</span>
+          <span className="inline-block px-32">•••</span>
         </div>
       </div>
 
-      {/* Header */}
-      <header className="border-b border-border sticky top-0 bg-background z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-lg md:text-xl font-mono text-foreground hover:text-primary transition-colors">
-            a normal website
-          </Link>
-
-          <MobileNav user={user} />
-        </div>
-      </header>
-
-      {/* Main Content - Empty support page */}
-      <main className="container mx-auto px-4 py-6 md:py-8">
-        <div className="space-y-4">
-          <h1 className="text-3xl md:text-4xl font-mono font-bold text-foreground">
-            help & support
-          </h1>
-        </div>
+      {/* Main Content - Empty support page with centered header */}
+      <main className="flex items-center justify-center min-h-[calc(100vh-60px)]">
+        <h1 className="text-3xl md:text-4xl font-mono font-bold text-foreground text-center">
+          help & support :)
+        </h1>
       </main>
 
       <style jsx>{`
@@ -132,7 +118,7 @@ export default function HelpPage() {
         }
 
         .animate-scroll-left {
-          animation: scroll-left 60s linear infinite;
+          animation: scroll-left 25s linear infinite;
         }
       `}</style>
     </div>
