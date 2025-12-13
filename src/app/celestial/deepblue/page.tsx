@@ -52,24 +52,39 @@ export default function DeepBluePage() {
   useEffect(() => {
     const initStockfish = async () => {
       try {
-        // Import pure JS version (not WASM) to avoid Node.js fs dependency
-        const StockfishModule = await import('stockfish.js/stockfish.js')
-        const Stockfish = StockfishModule.default || StockfishModule
-        const sf = typeof Stockfish === 'function' ? Stockfish() : Stockfish
+        console.log('[STOCKFISH] Initializing engine...')
 
-        sf.onmessage = () => {
-          // Silently process Stockfish messages
+        // Use Web Worker with CDN-hosted Stockfish to bypass bundling issues
+        const worker = new Worker('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js')
+
+        let initialized = false
+
+        worker.onmessage = (event: MessageEvent) => {
+          const message = event.data
+          console.log('[STOCKFISH]', message)
+
+          if (typeof message === 'string' && message.includes('uciok') && !initialized) {
+            initialized = true
+            console.log('[STOCKFISH] Engine initialized successfully')
+          }
+        }
+
+        worker.onerror = (error) => {
+          console.error('[STOCKFISH] Worker error:', error)
         }
 
         // Configure engine for maximum strength
-        sf.postMessage('uci')
-        sf.postMessage('setoption name Skill Level value 20') // 0-20, 20 is maximum strength
-        sf.postMessage('setoption name Move Overhead value 100')
-        sf.postMessage('isready')
+        worker.postMessage('uci')
+        worker.postMessage('setoption name Skill Level value 20') // 0-20, 20 is maximum strength
+        worker.postMessage('setoption name Move Overhead value 100')
+        worker.postMessage('setoption name Hash value 128') // Use 128MB hash
+        worker.postMessage('setoption name Threads value 2') // Use 2 threads
+        worker.postMessage('isready')
 
-        stockfishRef.current = sf
+        stockfishRef.current = worker
+        console.log('[STOCKFISH] Configuration sent, waiting for uciok...')
       } catch (error) {
-        // Silently fail
+        console.error('[STOCKFISH] Failed to initialize:', error)
       }
     }
 
@@ -180,6 +195,7 @@ export default function DeepBluePage() {
     if (possibleMoves.length === 0) return
 
     if (!stockfishRef.current) {
+      console.warn('[AI] Stockfish not initialized! Using random fallback.')
       // Fallback: pick a random move
       const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
       const gameCopy = new Chess(currentGame.fen())
@@ -191,6 +207,7 @@ export default function DeepBluePage() {
       return
     }
 
+    console.log('[AI] Stockfish thinking... Position:', currentGame.fen())
     setAiThinking(true)
 
     // Set up one-time listener for bestmove
@@ -201,6 +218,7 @@ export default function DeepBluePage() {
         stockfishRef.current.onmessage = null // Remove listener
 
         const uciMove = message.split(' ')[1]
+        console.log('[AI] Stockfish chose move:', uciMove)
 
         try {
           const gameCopy = new Chess(currentGame.fen())
@@ -212,14 +230,17 @@ export default function DeepBluePage() {
           const move = gameCopy.move({ from, to, promotion })
 
           if (move) {
+            console.log('[AI] Move executed:', move.san)
             setGame(gameCopy)
             setPosition(gameCopy.fen())
             setAiThinking(false)
             checkGameStatus(gameCopy)
           } else {
+            console.error('[AI] Invalid move from Stockfish:', uciMove)
             setAiThinking(false)
           }
         } catch (error) {
+          console.error('[AI] Error executing move:', error)
           setAiThinking(false)
         }
       }
@@ -229,7 +250,7 @@ export default function DeepBluePage() {
 
     // Send position to Stockfish
     stockfishRef.current.postMessage('position fen ' + currentGame.fen())
-    stockfishRef.current.postMessage('go movetime 500') // Think for 500ms
+    stockfishRef.current.postMessage('go movetime 2000') // Think for 2 seconds for maximum strength
   }, [gameOver, checkGameStatus])
 
   // Get possible moves for a square
@@ -397,7 +418,7 @@ export default function DeepBluePage() {
               <span className="text-blue-400 font-bold">Drag</span> your pieces to move them
             </p>
             <p className="text-blue-400/60 font-mono text-xs">
-              Powered by Stockfish (Maximum Strength)
+              Stockfish Level 20 • 2s per move • 128MB Hash
             </p>
           </div>
 
