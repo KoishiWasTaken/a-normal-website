@@ -63,11 +63,14 @@ export default function UnnerfedPuzzlePlazaPage() {
 
   // Hanoi puzzle state
   const [hanoiState, setHanoiState] = useState<HanoiState>({
-    pegs: [[5, 4, 3, 2, 1], [], []],
+    pegs: [[7, 6, 5, 4, 3, 2, 1], [], []],
     selectedPeg: null,
     moves: 0
   })
   const [hanoiUnlocked, setHanoiUnlocked] = useState(false)
+  const [hanoiChances, setHanoiChances] = useState(3)
+  const [redirecting, setRedirecting] = useState(false)
+  const HANOI_OPTIMAL_MOVES = 127
 
   useEffect(() => {
     const fetchData = async () => {
@@ -480,7 +483,26 @@ export default function UnnerfedPuzzlePlazaPage() {
   }
 
   // Hanoi puzzle logic
+  const resetHanoiPuzzle = () => {
+    if (hanoiChances > 1) {
+      setHanoiState({
+        pegs: [[7, 6, 5, 4, 3, 2, 1], [], []],
+        selectedPeg: null,
+        moves: 0
+      })
+      setHanoiChances(hanoiChances - 1)
+    } else {
+      // Last chance used up
+      setRedirecting(true)
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
+    }
+  }
+
   const handlePegClick = (pegIndex: number) => {
+    if (redirecting) return
+
     if (hanoiState.selectedPeg === null) {
       // Select a peg to pick up from
       if (hanoiState.pegs[pegIndex].length > 0) {
@@ -521,16 +543,26 @@ export default function UnnerfedPuzzlePlazaPage() {
       const ring = newPegs[fromPeg].pop()!
       newPegs[toPeg].push(ring)
 
+      const newMoves = hanoiState.moves + 1
+
       const newState = {
         pegs: newPegs,
         selectedPeg: null,
-        moves: hanoiState.moves + 1
+        moves: newMoves
       }
 
       setHanoiState(newState)
 
+      // Check if moves exceed optimal (loss condition)
+      if (newMoves > HANOI_OPTIMAL_MOVES) {
+        setTimeout(() => {
+          resetHanoiPuzzle()
+        }, 500)
+        return
+      }
+
       // Check if solved (all rings on peg 2)
-      if (newPegs[2].length === 5 && newPegs[2].every((ring, i) => ring === 5 - i)) {
+      if (newPegs[2].length === 7 && newPegs[2].every((ring, i) => ring === 7 - i)) {
         setTimeout(async () => {
           setHanoiUnlocked(true)
 
@@ -955,7 +987,7 @@ export default function UnnerfedPuzzlePlazaPage() {
                       Torus Puzzle
                     </CardTitle>
                     <CardDescription className="font-mono text-purple-300 font-semibold text-sm">
-                      {hanoiUnlocked ? '✅ Complete! Master Achieved!' : 'Move all rings from left to right. 5 rings. No hints.'}
+                      {hanoiUnlocked ? '✅ Complete! Master Achieved!' : 'Move all rings from left to right. 7 rings. No hints.'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -975,7 +1007,7 @@ export default function UnnerfedPuzzlePlazaPage() {
                             {/* Peg rod */}
                             <div
                               className="relative w-2 bg-purple-800 rounded-t cursor-pointer hover:bg-purple-700 active:bg-purple-600"
-                              style={{ height: '120px', minHeight: '120px' }}
+                              style={{ height: '160px', minHeight: '160px' }}
                               onClick={() => handlePegClick(pegIndex)}
                               onTouchStart={(e) => {
                                 e.preventDefault()
@@ -1009,12 +1041,14 @@ export default function UnnerfedPuzzlePlazaPage() {
                                       width: `${ringSize * 8 + 20}px`,
                                       height: '14px',
                                       backgroundColor: [
-                                        '#ef4444', // 5 (biggest)
-                                        '#f97316', // 4
-                                        '#eab308', // 3
-                                        '#22c55e', // 2
-                                        '#3b82f6'  // 1 (smallest)
-                                      ][5 - ringSize]
+                                        '#ef4444', // 7 (biggest) - red
+                                        '#f97316', // 6 - orange
+                                        '#eab308', // 5 - yellow
+                                        '#22c55e', // 4 - green
+                                        '#3b82f6', // 3 - blue
+                                        '#a855f7', // 2 - purple
+                                        '#ec4899'  // 1 (smallest) - pink
+                                      ][7 - ringSize]
                                     }}
                                   />
                                 ))}
@@ -1038,9 +1072,32 @@ export default function UnnerfedPuzzlePlazaPage() {
                           </div>
                         ))}
                       </div>
-                      <p className="text-sm font-mono text-purple-400 text-center">
-                        Moves: {hanoiState.moves} | Optimal: 31 | Extreme Difficulty
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-sm font-mono text-purple-400 text-center">
+                          Moves: {hanoiState.moves} | Optimal: {HANOI_OPTIMAL_MOVES} | Extreme Difficulty
+                        </p>
+                        <div className="flex items-center justify-center gap-4">
+                          <p className={`text-sm font-mono font-bold text-center ${
+                            hanoiChances === 3 ? 'text-green-400' :
+                            hanoiChances === 2 ? 'text-yellow-400' :
+                            'text-red-400'
+                          }`}>
+                            Chances: {hanoiChances}/3
+                          </p>
+                          <Button
+                            onClick={resetHanoiPuzzle}
+                            disabled={redirecting || hanoiUnlocked}
+                            className="font-mono text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Reset
+                          </Button>
+                        </div>
+                        {redirecting && (
+                          <p className="text-sm font-mono text-red-500 font-bold text-center animate-pulse">
+                            All chances exhausted. Redirecting to homepage...
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="text-center pt-4 border-t border-purple-800">
