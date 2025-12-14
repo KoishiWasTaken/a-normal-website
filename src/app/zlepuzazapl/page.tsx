@@ -38,6 +38,7 @@ export default function UnnerfedPuzzlePlazaPage() {
   const [dataRecovered, setDataRecovered] = useState(false)
   const [unnerfedMaster, setUnnerfedMaster] = useState(false)
   const [activeTab, setActiveTab] = useState('lighting')
+  const [corruptedGridSize, setCorruptedGridSize] = useState(5)
   const router = useRouter()
   const supabase = createClient()
 
@@ -109,6 +110,24 @@ export default function UnnerfedPuzzlePlazaPage() {
     if (dataRecovered) {
       const board = Array(10).fill(null).map(() => Array(10).fill(false))
       setLightingBoard(board)
+    }
+  }, [dataRecovered])
+
+  // Erratically change corrupted grid size
+  useEffect(() => {
+    if (!dataRecovered) {
+      const changeSize = () => {
+        // Random size between 3 and 10
+        const newSize = Math.floor(Math.random() * 8) + 3
+        setCorruptedGridSize(newSize)
+
+        // Random delay between 100ms and 800ms for erratic behavior
+        const delay = Math.floor(Math.random() * 700) + 100
+        setTimeout(changeSize, delay)
+      }
+
+      const timeout = setTimeout(changeSize, 200)
+      return () => clearTimeout(timeout)
     }
   }, [dataRecovered])
 
@@ -635,21 +654,21 @@ export default function UnnerfedPuzzlePlazaPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="flex flex-col items-center gap-4">
-                      {/* Empty Grid */}
-                      <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-red-950/80 to-black/80 rounded-lg border-4 border-red-600">
-                        {Array(5).fill(null).map((_, i) => (
+                      {/* Empty Grid - Erratically changing size */}
+                      <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-red-950/80 to-black/80 rounded-lg border-4 border-red-600 transition-all duration-100">
+                        {Array(corruptedGridSize).fill(null).map((_, i) => (
                           <div key={i} className="flex gap-2">
-                            {Array(5).fill(null).map((_, j) => (
+                            {Array(corruptedGridSize).fill(null).map((_, j) => (
                               <div
                                 key={`${i}-${j}`}
-                                className="w-12 h-12 md:w-16 md:h-16 rounded-lg border-4 border-red-900/50 bg-black/50"
+                                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg border-4 border-red-900/50 bg-black/50 transition-all duration-100"
                               />
                             ))}
                           </div>
                         ))}
                       </div>
                       <p className="text-sm font-mono text-red-400">
-                        Grid Size: 5x5 | Status: CORRUPTED
+                        Grid Size: ?x? | Status: CORRUPTED
                       </p>
                     </div>
 
