@@ -964,15 +964,47 @@ export default function UnnerfedPuzzlePlazaPage() {
                         {hanoiState.pegs.map((peg, pegIndex) => (
                           <div key={pegIndex} className="flex flex-col-reverse items-center gap-1">
                             {/* Peg base */}
-                            <div className="w-14 sm:w-16 md:w-24 h-2 bg-purple-700 rounded" />
+                            <div
+                              className="w-14 sm:w-16 md:w-24 h-2 bg-purple-700 rounded cursor-pointer hover:bg-purple-600 active:bg-purple-500"
+                              onClick={() => handlePegClick(pegIndex)}
+                              onTouchStart={(e) => {
+                                e.preventDefault()
+                                handlePegClick(pegIndex)
+                              }}
+                            />
                             {/* Peg rod */}
-                            <div className="relative w-2 bg-purple-800 rounded-t" style={{ height: '120px', minHeight: '120px' }}>
+                            <div
+                              className="relative w-2 bg-purple-800 rounded-t cursor-pointer hover:bg-purple-700 active:bg-purple-600"
+                              style={{ height: '120px', minHeight: '120px' }}
+                              onClick={() => handlePegClick(pegIndex)}
+                              onTouchStart={(e) => {
+                                e.preventDefault()
+                                handlePegClick(pegIndex)
+                              }}
+                            >
                               {/* Rings stacked from bottom */}
                               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex flex-col-reverse items-center gap-0.5">
                                 {peg.map((ringSize, ringIndex) => (
                                   <div
                                     key={ringIndex}
-                                    className="rounded-sm transition-all duration-200"
+                                    onClick={() => {
+                                      if (ringIndex === peg.length - 1) {
+                                        handlePegClick(pegIndex)
+                                      }
+                                    }}
+                                    onTouchStart={(e) => {
+                                      e.preventDefault()
+                                      if (ringIndex === peg.length - 1) {
+                                        handlePegClick(pegIndex)
+                                      }
+                                    }}
+                                    className={`rounded-sm transition-all duration-200 ${
+                                      ringIndex === peg.length - 1 ? 'cursor-pointer hover:brightness-110 active:brightness-125' : ''
+                                    } ${
+                                      hanoiState.selectedPeg === pegIndex && ringIndex === peg.length - 1
+                                        ? 'ring-2 ring-white ring-offset-1 ring-offset-purple-900 animate-pulse'
+                                        : ''
+                                    }`}
                                     style={{
                                       width: `${ringSize * 8 + 20}px`,
                                       height: '14px',
@@ -991,6 +1023,10 @@ export default function UnnerfedPuzzlePlazaPage() {
                             {/* Clickable area */}
                             <button
                               onClick={() => handlePegClick(pegIndex)}
+                              onTouchStart={(e) => {
+                                e.preventDefault()
+                                handlePegClick(pegIndex)
+                              }}
                               className={`mt-2 px-2 sm:px-3 md:px-4 py-1.5 md:py-2 rounded font-mono text-[10px] sm:text-xs transition-all ${
                                 hanoiState.selectedPeg === pegIndex
                                   ? 'bg-purple-500 text-white font-bold'
