@@ -212,15 +212,12 @@ export default function IndexPage() {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.push('/auth/signin')
-        return
-      }
-
       setUser(user)
 
-      // Track page discovery
-      await recordPageDiscovery(supabase, user.id, 'archive')
+      // Track page discovery (only for authenticated users)
+      if (user) {
+        await recordPageDiscovery(supabase, user.id, 'archive')
+      }
 
       // Fetch ALL pages
       const { data: allPagesData } = await supabase
@@ -233,26 +230,30 @@ export default function IndexPage() {
         return
       }
 
-      // Fetch user's discoveries
-      const { data: discoveryData } = await supabase
-        .from('page_discoveries')
-        .select(`
-          id,
-          page_id,
-          discovered_at,
-          discovery_number,
-          pages!inner(
+      // Fetch user's discoveries (only for authenticated users)
+      let discoveryData = null
+      if (user) {
+        const { data } = await supabase
+          .from('page_discoveries')
+          .select(`
             id,
-            page_key,
-            page_name,
-            page_url,
-            page_description,
-            how_to_access,
-            can_navigate,
-            discovery_order
-          )
-        `)
-        .eq('user_id', user.id)
+            page_id,
+            discovered_at,
+            discovery_number,
+            pages!inner(
+              id,
+              page_key,
+              page_name,
+              page_url,
+              page_description,
+              how_to_access,
+              can_navigate,
+              discovery_order
+            )
+          `)
+          .eq('user_id', user.id)
+        discoveryData = data
+      }
 
       // Get statistics for ALL pages
       const allPageIds = allPagesData.map((p) => p.id)
