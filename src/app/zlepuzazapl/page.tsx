@@ -655,16 +655,28 @@ export default function UnnerfedPuzzlePlazaPage() {
                   <CardContent className="space-y-6">
                     <div className="flex flex-col items-center gap-4">
                       {/* Empty Grid - Erratically changing size */}
-                      <div className="inline-grid gap-2 p-4 bg-gradient-to-br from-red-950/80 to-black/80 rounded-lg border-4 border-red-600 transition-all duration-100">
+                      <div
+                        className="p-4 bg-gradient-to-br from-red-950/80 to-black/80 rounded-lg border-4 border-red-600"
+                        style={{
+                          width: '320px',
+                          height: '320px',
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${corruptedGridSize}, 1fr)`,
+                          gridTemplateRows: `repeat(${corruptedGridSize}, 1fr)`,
+                          gap: '8px',
+                        }}
+                      >
                         {Array(corruptedGridSize).fill(null).map((_, i) => (
-                          <div key={i} className="flex gap-2">
-                            {Array(corruptedGridSize).fill(null).map((_, j) => (
-                              <div
-                                key={`${i}-${j}`}
-                                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg border-4 border-red-900/50 bg-black/50 transition-all duration-100"
-                              />
-                            ))}
-                          </div>
+                          Array(corruptedGridSize).fill(null).map((_, j) => (
+                            <div
+                              key={`${i}-${j}`}
+                              className="rounded-lg border-4 border-red-900/50 bg-black/50 transition-all duration-100"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                              }}
+                            />
+                          ))
                         ))}
                       </div>
                       <p className="text-sm font-mono text-red-400">
