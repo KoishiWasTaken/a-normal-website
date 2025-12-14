@@ -116,6 +116,27 @@ export default function UnnerfedPuzzlePlazaPage() {
     }
   }, [dataRecovered])
 
+  // Initialize all puzzles if user has master status
+  useEffect(() => {
+    if (unnerfedMaster) {
+      // Initialize lighting puzzle
+      const lightBoard = Array(10).fill(null).map(() => Array(10).fill(false))
+      setLightingBoard(lightBoard)
+      setLightingUnlocked(true)
+
+      // Initialize sliding puzzle
+      initSlidingPuzzle()
+      setSlidingUnlocked(true)
+
+      // Initialize flow puzzle
+      initFlowPuzzle()
+      setFlowUnlocked(true)
+
+      // Unlock hanoi puzzle
+      setHanoiUnlocked(true)
+    }
+  }, [unnerfedMaster])
+
   // Erratically change corrupted grid size
   useEffect(() => {
     if (!dataRecovered) {
