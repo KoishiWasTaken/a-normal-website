@@ -94,16 +94,26 @@ export default function PuzzlePlazaPage() {
     let board = solved.map(row => [...row])
     let emptyR = size - 1
     let emptyC = size - 1
+    let lastMove: {row: number, col: number} | null = null
 
-    // Make 100 random moves to shuffle
-    for (let i = 0; i < 100; i++) {
+    // Make moves proportional to grid size (size^2 * 50 moves for thorough shuffling)
+    const numMoves = size * size * 50
+    for (let i = 0; i < numMoves; i++) {
       const validMoves: {row: number, col: number}[] = []
       if (emptyR > 0) validMoves.push({ row: emptyR - 1, col: emptyC })
       if (emptyR < size - 1) validMoves.push({ row: emptyR + 1, col: emptyC })
       if (emptyC > 0) validMoves.push({ row: emptyR, col: emptyC - 1 })
       if (emptyC < size - 1) validMoves.push({ row: emptyR, col: emptyC + 1 })
 
-      const move = validMoves[Math.floor(Math.random() * validMoves.length)]
+      // Filter out the last move to prevent immediate reversal
+      const availableMoves = lastMove
+        ? validMoves.filter(m => m.row !== lastMove.row || m.col !== lastMove.col)
+        : validMoves
+
+      const movesToUse = availableMoves.length > 0 ? availableMoves : validMoves
+      const move = movesToUse[Math.floor(Math.random() * movesToUse.length)]
+
+      lastMove = { row: emptyR, col: emptyC }
       board[emptyR][emptyC] = board[move.row][move.col]
       board[move.row][move.col] = 0
       emptyR = move.row
