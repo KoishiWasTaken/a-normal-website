@@ -484,6 +484,9 @@ export default function UnnerfedPuzzlePlazaPage() {
 
   // Hanoi puzzle logic
   const resetHanoiPuzzle = () => {
+    // Don't reset if already completed or master status achieved
+    if (hanoiUnlocked || unnerfedMaster) return
+
     if (hanoiChances > 1) {
       setHanoiState({
         pegs: [[7, 6, 5, 4, 3, 2, 1], [], []],
@@ -553,8 +556,8 @@ export default function UnnerfedPuzzlePlazaPage() {
 
       setHanoiState(newState)
 
-      // Check if moves exceed optimal (loss condition)
-      if (newMoves > HANOI_OPTIMAL_MOVES) {
+      // Check if moves exceed optimal (loss condition) - only if not already completed
+      if (!hanoiUnlocked && !unnerfedMaster && newMoves > HANOI_OPTIMAL_MOVES) {
         setTimeout(() => {
           resetHanoiPuzzle()
         }, 500)
@@ -571,7 +574,7 @@ export default function UnnerfedPuzzlePlazaPage() {
             await supabase
               .from('profiles')
               .update({ unnerfed_plaza_master: true })
-              .eq('user_id', user.id)
+              .eq('id', user.id)
 
             setUnnerfedMaster(true)
           }
@@ -1076,22 +1079,24 @@ export default function UnnerfedPuzzlePlazaPage() {
                         <p className="text-sm font-mono text-purple-400 text-center">
                           Moves: {hanoiState.moves} | Optimal: {HANOI_OPTIMAL_MOVES} | Extreme Difficulty
                         </p>
-                        <div className="flex items-center justify-center gap-4">
-                          <p className={`text-sm font-mono font-bold text-center ${
-                            hanoiChances === 3 ? 'text-green-400' :
-                            hanoiChances === 2 ? 'text-yellow-400' :
-                            'text-red-400'
-                          }`}>
-                            Chances: {hanoiChances}/3
-                          </p>
-                          <Button
-                            onClick={resetHanoiPuzzle}
-                            disabled={redirecting || hanoiUnlocked}
-                            className="font-mono text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Reset
-                          </Button>
-                        </div>
+                        {!hanoiUnlocked && !unnerfedMaster && (
+                          <div className="flex items-center justify-center gap-4">
+                            <p className={`text-sm font-mono font-bold text-center ${
+                              hanoiChances === 3 ? 'text-green-400' :
+                              hanoiChances === 2 ? 'text-yellow-400' :
+                              'text-red-400'
+                            }`}>
+                              Chances: {hanoiChances}/3
+                            </p>
+                            <Button
+                              onClick={resetHanoiPuzzle}
+                              disabled={redirecting}
+                              className="font-mono text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Reset
+                            </Button>
+                          </div>
+                        )}
                         {redirecting && (
                           <p className="text-sm font-mono text-red-500 font-bold text-center animate-pulse">
                             All chances exhausted. Redirecting to homepage...
