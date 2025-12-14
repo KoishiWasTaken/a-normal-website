@@ -70,7 +70,7 @@ export default function TerminalPage() {
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('data_recovered')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .maybeSingle()
 
         if (error) {
@@ -82,7 +82,7 @@ export default function TerminalPage() {
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ data_recovered: true })
-            .eq('user_id', user.id)
+            .eq('id', user.id)
 
           if (updateError) {
             newLines.push({ type: 'output', content: 'error: recovery failed.' })
